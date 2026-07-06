@@ -214,6 +214,7 @@ const SYSTEM_PATHS = [
   'TRADEMARK.md',
   'LICENSE',
   'CITATION.cff',
+  '.editorconfig',
   '.github/',
   'package.json',
   'build-cv-latex.mjs',
