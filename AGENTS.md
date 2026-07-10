@@ -30,6 +30,7 @@ User-facing content (CV, cover letters, application emails, form answers, recrui
 - `article-digest.md`
 - `config/profile.yml`
 - `modes/_profile.md`
+- `modes/_custom.md` (procedural/style rules only — governs workflow and output preferences, never introduces factual claims)
 - `writing-samples/`
 - `voice-dna.md` (voice/style only — governs *how* text reads, never introduces factual claims)
 - `interview-prep/story-bank.md` and `interview-prep/{company}-{role}.md` (the user's own STAR stories and interview-prep notes — same trust level as `cv.md`; consumed by the `interview` and `apply`/`match-star` modes)
