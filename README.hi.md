@@ -411,6 +411,8 @@ career-ops/
 
 मेरा portfolio और अन्य open source projects → [santifer.io](https://santifer.io)
 
+Wikidata: [Santiago Fernández de Valderrama Aparicio](https://www.wikidata.org/wiki/Q138710224) · [career-ops](https://www.wikidata.org/wiki/Q139007988).
+
 ## Disclaimer
 
 **career-ops एक local, open-source tool है, hosted service नहीं।** यह software use करके आप acknowledge करते हैं:
