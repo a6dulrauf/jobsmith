@@ -19,7 +19,6 @@ jobs:
       - uses: actions/github-script@v7
         env:
           WEBHOOK: ${{ secrets.DISCORD_MANIFESTO_WEBHOOK }}
-          OG_PATTERN: ${{ vars.MANIFESTO_OG_PATTERN }}   # opcional: ruta OG de docs con {login}; sin definir = embed sin imagen
         with:
           script: |
             const before = context.payload.before, after = context.payload.after;
@@ -47,7 +46,8 @@ jobs:
                 const { data: s } = await github.rest.search.issuesAndPullRequests({ q: `author:${login}` });
                 if (s.total_count === 1) first = ' · their first contribution on GitHub';
               } catch (e) { /* search rate-limited: omitir flag */ }
-              lines.push(`**#${n} @${esc(login)}**` + (quote ? ` — "${esc(quote)}"` : '') + first);
+              // Firmante clicable a su card (feedback Santiago: el visual es la mimesis)
+              lines.push(`**[#${n} @${esc(login)}](https://career-ops.org/manifesto/s/${login})**` + (quote ? ` — "${esc(quote)}"` : '') + first);
             }
             const firstLogin = (added[0].match(/^- @(\S+)/) || [])[1];
             const embed = {
@@ -57,11 +57,17 @@ jobs:
               color: 0xd4a24e,
               footer: { text: 'Sign yours → career-ops.org/manifesto' }
             };
-            if (process.env.OG_PATTERN && firstLogin)
-              embed.image = { url: process.env.OG_PATTERN.replace('{login}', firstLogin) };
+            // Imagen = la card OG real del primer firmante de la oleada
+            // (ruta oficial de docs, verificada 200 image/png sin query-hash)
+            if (firstLogin)
+              embed.image = { url: `https://career-ops.org/manifesto/s/${firstLogin}/opengraph-image` };
             const r = await fetch(process.env.WEBHOOK, {
               method: 'POST', headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ embeds: [embed] })
+              body: JSON.stringify({
+                username: 'career-ops bot',
+                avatar_url: 'https://cdn.discordapp.com/avatars/1491495413184725002/af49719ebbad192020cfe0af6531ce57.webp',
+                embeds: [embed]
+              })
             });
             if (!r.ok) throw new Error(`Discord webhook ${r.status}`);
             core.info(`guestbook: ${lines.length} firma(s) posteada(s)`);
