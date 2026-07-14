@@ -48,3 +48,4 @@ public commit with a stated reason.
 - @maricuxi25 | 2026-07-14 | "career-ops helped me looking for a better job" | id:305008579 | src:https://github.com/santifer/career-ops/discussions/1868
 - @gajula-abhiram | Abhiram Gajula | 2026-07-14 | "career-ops 'The best GitHub project ever'" | id:207408059 | src:https://github.com/santifer/career-ops/discussions/1869
 - @rvn5801 | Venkata Narayana Redrouthu | 2026-07-14 | id:159086622 | src:https://github.com/santifer/career-ops/discussions/1873
+- @PruthviVKadam | Pruthvi Kadam | 2026-07-14 | "CareerOps improved my job hunt strategy more than i expected" | id:206912332 | src:https://github.com/santifer/career-ops/discussions/1875
