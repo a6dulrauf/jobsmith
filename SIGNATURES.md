@@ -17,7 +17,7 @@ Prefer the git way? A pull request adding ONE line at the END of this file
 
 Each merged signature looks like this:
 
-    - @username | Display Name | YYYY-MM-DD | "optional sentence" | id:12345678 | src:https://github.com/santifer/career-ops/discussions/NNN
+    @username | Display Name | YYYY-MM-DD | "optional sentence" | id:12345678 | src:https://github.com/santifer/career-ops/discussions/NNN
 
 The `src:` field links back to the original submission, made by that account
 under its own session — every line in this ledger is auditable, click by
