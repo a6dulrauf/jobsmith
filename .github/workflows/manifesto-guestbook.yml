@@ -52,7 +52,7 @@ jobs:
                 const { data: s } = await github.rest.search.issuesAndPullRequests({ q: `author:${login}` });
                 if (s.total_count === 1) first = ' · their first contribution on GitHub';
               } catch (e) { /* search rate-limited: omitir flag */ }
-              // Firmante clicable a su card (feedback Santiago: el visual es la mimesis)
+              // Firmante clicable a su card (el visual es lo que invita a firmar)
               lines.push(`**[#${n} @${esc(login)}](https://career-ops.org/manifesto/s/${login})**` + (quote ? ` — "${esc(quote)}"` : '') + first);
             }
             const firstLogin = (fresh[0].match(/^- @(\S+)/) || [])[1];

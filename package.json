@@ -50,7 +50,8 @@
     "prepare:application": "node prepare-application.mjs",
     "build:dashboard": "node build-dashboard.mjs",
     "serve:dashboard": "cd dashboard && go run . --path ..",
-    "postinstall": "npx playwright install chromium --with-deps || npx playwright install chromium --with-deps"
+    "postinstall": "npx playwright install chromium --with-deps || npx playwright install chromium --with-deps",
+    "manifesto": "node manifesto.mjs"
   },
   "keywords": [
     "ai",
