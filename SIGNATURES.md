@@ -49,3 +49,4 @@ public commit with a stated reason.
 - @gajula-abhiram | Abhiram Gajula | 2026-07-14 | "career-ops 'The best GitHub project ever'" | id:207408059 | src:https://github.com/santifer/career-ops/discussions/1869
 - @rvn5801 | Venkata Narayana Redrouthu | 2026-07-14 | id:159086622 | src:https://github.com/santifer/career-ops/discussions/1873
 - @PruthviVKadam | Pruthvi Kadam | 2026-07-14 | "CareerOps improved my job hunt strategy more than i expected" | id:206912332 | src:https://github.com/santifer/career-ops/discussions/1875
+- @12nethuwa | Heshan Damsith | 2026-07-14 | id:267125253 | src:https://github.com/santifer/career-ops/discussions/1877
