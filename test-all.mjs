@@ -101,7 +101,17 @@ async function runDiscovered(filter = null) {
     console.log(`  ❌ no test files matched${filter ? ` --only "${filter}"` : ''} under tests/`);
     process.exit(1);
   }
-  for (const f of files) await import(pathToFileURL(f).href);
+  for (const f of files) {
+    // Discovered suites run IN-PROCESS and share this suite's counters. A
+    // process.exit() inside one would terminate test-all mid-run with a forged
+    // exit code — every later section (and finish()) would silently never run.
+    // Refuse to import such a suite and fail loudly instead (#1916 regression).
+    if (/\bprocess\.exit\s*\(/.test(readFileSync(f, 'utf-8'))) {
+      fail(`${f.slice(ROOT.length + 1)} calls process.exit() — discovered suites must use pass/fail from tests/helpers.mjs and never exit`);
+      continue;
+    }
+    await import(pathToFileURL(f).href);
+  }
 }
 
 const onlyIdx = process.argv.indexOf('--only');
@@ -164,7 +174,6 @@ const scripts = [
   { name: 'followup-seed-tests.mjs', expectExit: 0 },
   { name: 'paste-reply-tests.mjs', expectExit: 0 },
   { name: 'set-status-tests.mjs', expectExit: 0 },
-  { name: 'tests/output-language.test.mjs', expectExit: 0 },
   { name: 'tracker-writer-lock-tests.mjs', expectExit: 0 },
   // Root-level standalone suites shipped in SYSTEM_PATHS but previously never
   // executed by CI (issue #1624). All are fast (<0.5s each), so they run in

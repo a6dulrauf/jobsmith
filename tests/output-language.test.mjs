@@ -1,25 +1,22 @@
-#!/usr/bin/env node
-
+// tests/output-language.test.mjs — headless engines honor language.output (#1897).
+//
+// Discovered suites run IN-PROCESS inside test-all.mjs: they must report via
+// the shared pass/fail counters from helpers.mjs and must never terminate the
+// process themselves — a stray exit call here would kill the whole suite
+// mid-run and forge its exit code (see the guard in test-all's runDiscovered).
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { pass, fail, ROOT } from './helpers.mjs';
 import {
   outputLanguageInstruction,
   parseOutputLanguage,
 } from '../profile-language.mjs';
 
-const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-let passed = 0;
-let failed = 0;
+console.log('\noutput-language — headless engines honor language.output (#1897)');
 
 function check(condition, message) {
-  if (condition) {
-    console.log(`PASS ${message}`);
-    passed++;
-  } else {
-    console.error(`FAIL ${message}`);
-    failed++;
-  }
+  if (condition) pass(message);
+  else fail(message);
 }
 
 check(parseOutputLanguage('language:\n  output: de\n') === 'de', 'reads language.output');
@@ -65,6 +62,3 @@ check(openrouterPrompt.includes(outputLanguageInstruction('ja')), 'OpenRouter sy
 
 const gemini = readFileSync(join(ROOT, 'gemini-eval.mjs'), 'utf-8');
 check(!gemini.includes('in English, unless the JD is in another language'), 'Gemini no longer lets JD language override profile output');
-
-console.log(`\n${passed} passed, ${failed} failed`);
-process.exit(failed > 0 ? 1 : 0);
