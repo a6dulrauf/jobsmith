@@ -646,6 +646,48 @@ function scanHistoryPolicy(config = {}) {
   };
 }
 
+// Query params that carry no identity information for a job posting — safe to
+// strip when computing the dedup key. Deliberately an allowlist rather than
+// "strip everything": several ATSes key the posting off a query param (e.g.
+// Greenhouse's `gh_jid`), so a blanket strip would collapse distinct roles.
+const DEDUP_STRIP_PARAMS = new Set([
+  'language', 'lang', 'locale',
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+  'ref', 'src', 'source', 'gh_src', 'lever-origin', 'lever-source',
+]);
+
+/**
+ * Normalize a job posting URL into a stable dedup key.
+ *
+ * Strips cosmetic query params (locale/tracking), drops a trailing slash,
+ * and lowercases scheme + host. Only used to compute the *comparison* key —
+ * callers keep writing/displaying the original URL so links stay clickable
+ * and scan-history/pipeline.md stay faithful to what the provider returned.
+ *
+ * Falls back to the raw string when the URL is malformed, preserving the
+ * old byte-for-byte behavior for unparsable history rows.
+ *
+ * @param {string} url
+ * @returns {string}
+ */
+export function normalizeUrlForDedup(url) {
+  if (typeof url !== 'string' || !url) return url;
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  for (const param of Array.from(parsed.searchParams.keys())) {
+    if (DEDUP_STRIP_PARAMS.has(param.toLowerCase())) {
+      parsed.searchParams.delete(param);
+    }
+  }
+  parsed.hash = '';
+  parsed.pathname = parsed.pathname.replace(/\/+$/, '') || '/';
+  return parsed.toString();
+}
+
 export function loadSeenUrls(policy = {}) {
   const seen = new Set();
   let recheckEligible = 0;
@@ -656,7 +698,7 @@ export function loadSeenUrls(policy = {}) {
     for (const line of lines.slice(1)) { // skip header
       const [url, firstSeen, , , , status = 'added'] = line.split('\t');
       if (!url) continue;
-      if (shouldDedupScanHistoryRow({ firstSeen, status }, policy)) seen.add(url);
+      if (shouldDedupScanHistoryRow({ firstSeen, status }, policy)) seen.add(normalizeUrlForDedup(url));
       else recheckEligible++;
     }
   }
@@ -665,7 +707,7 @@ export function loadSeenUrls(policy = {}) {
   if (existsSync(PIPELINE_PATH)) {
     const text = readFileSync(PIPELINE_PATH, 'utf-8');
     for (const match of text.matchAll(/- \[[ x]\] (https?:\/\/\S+)/g)) {
-      seen.add(match[1]);
+      seen.add(normalizeUrlForDedup(match[1]));
     }
   }
 
@@ -673,7 +715,7 @@ export function loadSeenUrls(policy = {}) {
   if (existsSync(APPLICATIONS_PATH)) {
     const text = readFileSync(APPLICATIONS_PATH, 'utf-8');
     for (const match of text.matchAll(/https?:\/\/[^\s|)]+/g)) {
-      seen.add(match[0]);
+      seen.add(normalizeUrlForDedup(match[0]));
     }
   }
 
@@ -1727,7 +1769,8 @@ async function main() {
           totalFilteredVisa++;
           continue;
         }
-        if (seenUrls.has(job.url)) {
+        const dedupUrl = normalizeUrlForDedup(job.url);
+        if (seenUrls.has(dedupUrl)) {
           totalDupes++;
           continue;
         }
@@ -1746,7 +1789,7 @@ async function main() {
           continue;
         }
         // Mark as seen to avoid intra-scan dupes
-        seenUrls.add(job.url);
+        seenUrls.add(dedupUrl);
         seenCompanyRoles.add(key);
         // Tag with the company's careers domain so verify can offer a 404/410
         // rediscovery fallback. A null domain (no careers_url) marks the offer

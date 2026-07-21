@@ -2018,6 +2018,77 @@ try {
   fail(`scan.mjs fresh-install pipeline test crashed: ${err.message}`);
 }
 
+// URL dedup normalization (#2065): a cosmetic query-suffix variant of an
+// already-processed URL (locale/tracking params, trailing slash, case) must
+// still dedup against the bare form, while an identity-bearing param (e.g.
+// Greenhouse's gh_jid) must NOT be stripped.
+try {
+  const { normalizeUrlForDedup } = await import(pathToFileURL(join(ROOT, 'scan.mjs')).href);
+
+  const bare = 'https://acme.jobs.personio.com/job/2670127';
+  const withLang = `${bare}?language=en`;
+  const withTrailingSlash = `${bare}/`;
+  const withUtm = `${bare}?utm_source=newsletter`;
+  const ghJid = 'https://boards.greenhouse.io/acme/jobs/123?gh_jid=123';
+  const malformed = 'not a url';
+
+  if (
+    normalizeUrlForDedup(withLang) === normalizeUrlForDedup(bare) &&
+    normalizeUrlForDedup(withTrailingSlash) === normalizeUrlForDedup(bare) &&
+    normalizeUrlForDedup(withUtm) === normalizeUrlForDedup(bare) &&
+    normalizeUrlForDedup(ghJid).includes('gh_jid=123') &&
+    normalizeUrlForDedup(malformed) === malformed
+  ) {
+    pass('scan.mjs normalizeUrlForDedup strips cosmetic params/trailing slash but preserves identity params and malformed input (#2065)');
+  } else {
+    fail(`scan.mjs normalizeUrlForDedup wrong: withLang=${normalizeUrlForDedup(withLang)} withTrailingSlash=${normalizeUrlForDedup(withTrailingSlash)} withUtm=${normalizeUrlForDedup(withUtm)} ghJid=${normalizeUrlForDedup(ghJid)} malformed=${normalizeUrlForDedup(malformed)}`);
+  }
+
+  const fixtureRoot = mkdtempSync(join(tmpdir(), 'career-ops-seen-urls-'));
+  const originalCwd = process.cwd();
+  try {
+    mkdirSync(join(fixtureRoot, 'data'), { recursive: true });
+    writeFileSync(
+      join(fixtureRoot, 'data', 'scan-history.tsv'),
+      `url\tfirst_seen\tportal\ttitle\tcompany\tstatus\tlocation\n${withLang}\t2026-07-06\tpersonio-feed\tPM\tAcme\tadded\tRemote\n`,
+      'utf-8',
+    );
+    process.chdir(fixtureRoot);
+    const { loadSeenUrls } = await import(pathToFileURL(join(ROOT, 'scan.mjs')).href);
+    const { seen } = loadSeenUrls();
+    if (seen.has(normalizeUrlForDedup(bare)) && seen.has(normalizeUrlForDedup(withLang))) {
+      pass('scan.mjs loadSeenUrls dedups a history row against a cosmetic query-suffix variant (#2065)');
+    } else {
+      fail(`scan.mjs loadSeenUrls did not dedup query-suffix variant: has(bare)=${seen.has(normalizeUrlForDedup(bare))} has(withLang)=${seen.has(normalizeUrlForDedup(withLang))}`);
+    }
+
+    // Same dedupUrl-once pattern the main-loop and runSeedScan/scan-ats-full
+    // loops use: a job re-fetched under either URL variant of an already-seen
+    // history row must be counted as a dupe (never re-added to seenUrls).
+    let dupeCount = 0;
+    let newCount = 0;
+    for (const jobUrl of [bare, withLang, withTrailingSlash]) {
+      const dedupUrl = normalizeUrlForDedup(jobUrl);
+      if (seen.has(dedupUrl)) {
+        dupeCount++;
+      } else {
+        seen.add(dedupUrl);
+        newCount++;
+      }
+    }
+    if (dupeCount === 3 && newCount === 0) {
+      pass('scan.mjs main-loop dedup pattern treats every cosmetic URL variant of a seen row as a duplicate, never re-adds (#2065)');
+    } else {
+      fail(`scan.mjs main-loop dedup pattern wrong: dupeCount=${dupeCount} newCount=${newCount} (expected 3/0)`);
+    }
+  } finally {
+    process.chdir(originalCwd);
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+} catch (err) {
+  fail(`scan.mjs normalizeUrlForDedup test crashed: ${err.message}`);
+}
+
 // Company blacklist (#1742): data/blacklist.md is the user's do-not-apply
 // list. parseBlacklist keys rows by the shared normalizeCompany() so matching
 // is case- and punctuation-insensitive; loadBlacklist on an absent file is a
