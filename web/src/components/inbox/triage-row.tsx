@@ -67,10 +67,22 @@ export function TriageRow({
       <CompanyLogo name={job.company} size={20} />
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm">
+        {/* Open the real posting. Deciding Save vs Skip from company + title +
+            location alone is weaker triage than being able to glance at the JD,
+            and following a link costs nothing — no tokens, no fabricated signal —
+            so it sits inside this surface's "cheap, free signals" rule rather
+            than against it. New tab, so the triage list never loses its place.
+            rel=noreferrer: these URLs come from third-party ATS feeds. */}
+        <a
+          href={job.url}
+          target="_blank"
+          rel="noreferrer noopener"
+          title={`Open ${job.company} — ${job.role}`}
+          className="block truncate text-sm hover:underline focus-visible:underline focus-visible:outline-none"
+        >
           <span className="font-medium text-foreground">{job.company}</span>
           <span className="text-muted"> · {job.role}</span>
-        </p>
+        </a>
         <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-faint">
           {job.location && <span className="truncate">{job.location}</span>}
           {source && <span className="rounded bg-surface-hover px-1 py-px font-medium text-muted">{ATS_LABEL[source]}</span>}
