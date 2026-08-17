@@ -3,7 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { resolveCli } from "@/lib/clis";
 import { careerOpsRoot, readMemory, findReportFile } from "@/lib/career-ops";
-import { resolvePdfPaths, resolveCoverPaths, resolveEmailPaths, type PdfPaths } from "@/lib/pdf-paths.mjs";
+import { randomBytes } from "node:crypto";
+import { resolvePdfPaths, resolveCoverPaths, resolveEmailPaths, resolveDraftPaths, resolveComparePaths, resolveAddPaths, type PdfPaths } from "@/lib/pdf-paths.mjs";
 import { renderAndMarkPdf } from "@/lib/pdf-render.mjs";
 import { renderCoverLetter } from "@/lib/cover-render.mjs";
 import { acquireTrackerWrite, releaseTrackerWrite } from "@/lib/core/run-registry";
@@ -26,9 +27,11 @@ type BuildPromptArgs = {
   pdfPaths?: PdfPaths;
   coverPaths?: { payload: string; finalPdf: string };
   emailPaths?: { draft: string };
+  draftPath?: string;
+  addPayload?: string;
 };
 
-function buildPrompt({ kind, input, memory, today, pdfPaths, coverPaths, emailPaths }: BuildPromptArgs): string {
+function buildPrompt({ kind, input, memory, today, pdfPaths, coverPaths, emailPaths, draftPath, addPayload }: BuildPromptArgs): string {
   const mem = memory.trim() ? `\n\nDurable notes about the user (from their profile):\n${memory.trim()}\n` : "";
   if (kind === "research") {
     return `You are investigating the user's OWN work / portfolio to surface job-search-relevant strengths, headless. Investigate the target (use WebFetch for URLs; read local files if referenced) and report: what it is, why it is impressive, and how to leverage it in their job search — which roles/claims it supports and how to frame it on a CV. Be specific, honest, and encouraging.${mem}
@@ -73,6 +76,43 @@ End with EXACTLY one final line: VERDICT: {5 if the payload was written, else 1}
 This is a DRAFT ONLY. career-ops never sends, submits, or clicks anything — the user sends it themselves. Do NOT modify cv.md, the tracker, or any report.${mem}
 
 End with EXACTLY one final line: VERDICT: {5 if the draft was written, else 1}/5 — {a one-line summary, ≤12 words}`;
+  }
+  if (kind === "contacto") {
+    return `You are finding the right person to contact about application #${input} and drafting an outreach message, headless, on the user's machine. Run the REAL career-ops "contacto" mode — follow modes/contacto.md EXACTLY.
+1. Read modes/contacto.md, cv.md, config/profile.yml, modes/_profile.md, and the evaluation report at reports/${input}-*.md.
+2. Use WebSearch to identify the most useful contact: the hiring manager, the recruiter for the team, or a peer on it. Name who you found and cite where you found them. If you cannot identify a specific person with evidence, say so plainly — do NOT invent a name, title, or profile URL.
+3. Draft the outreach message per modes/contacto.md, respecting its character budget and tailoring to the contact type you actually found.
+4. Write the result as markdown to EXACTLY this path: ${draftPath}
+   Use headings: "## Contact" (who, role, evidence/source), "## Message" (the draft), "## Why this person".
+This is a DRAFT. Do not send, submit, connect, or message anyone. Do NOT modify cv.md, the tracker, or any report.${mem}
+
+End with EXACTLY one final line: VERDICT: {5 if the draft was written, else 1}/5 — {who you found, ≤12 words}`;
+  }
+  if (kind === "compare") {
+    return `You are comparing several evaluated offers for the user, headless, on their machine. Run the REAL career-ops "ofertas" comparison mode — read modes/ofertas.md and follow it.
+1. Read modes/ofertas.md, cv.md, config/profile.yml, modes/_profile.md.
+2. Read EVERY report for these application numbers: ${input}. Their files are reports/{number}-*.md. Use the scores, Block G legitimacy tiers, gaps and risks ALREADY in those reports — do not re-evaluate from scratch and do not invent new scores.
+3. Compare them on the dimensions that actually decide this: fit, compensation (say "unassessed" where the report says so — never estimate), legitimacy, work-authorization/relocation, and the specific gaps each one exposes.
+4. Write the comparison as markdown to EXACTLY this path: ${draftPath}
+   Include a comparison table, then a short per-offer verdict, then a recommendation that names its own reasoning. If two offers are genuinely close, say they are close rather than manufacturing a winner.
+Do NOT modify cv.md, the tracker, or any report.${mem}
+
+End with EXACTLY one final line: VERDICT: {5 if the comparison was written, else 1}/5 — {which came out ahead, ≤12 words}`;
+  }
+  if (kind === "add") {
+    return `You are preparing an addition to the user's CV, headless, on their machine. Run the REAL career-ops "add" mode — read modes/add.md and follow it EXACTLY.
+
+The thing to add, described by the user: ${input}
+
+1. Read modes/add.md, cv.md, and article-digest.md if it exists, so you can match the existing structure and voice.
+2. Ground the addition ONLY in what the user told you above and what you can verify from a URL they provided. NEVER invent a metric, a date, an employer, a co-author, or an outcome. If a detail is needed and unknown, leave it out and note it — do not guess.
+3. Write ATS-appropriate markdown blocks in the same style as the surrounding cv.md content.
+4. Write the add-entry payload JSON to EXACTLY this path, and nothing else: ${addPayload}
+   Its shape is specified in modes/add.md and consumed by add-entry.mjs.
+
+CRITICAL: do NOT run add-entry.mjs and do NOT edit cv.md or article-digest.md yourself. cv.md is the single source of truth every other mode reads. The platform will run add-entry.mjs --dry-run, show the user a preview, and write only after they explicitly confirm.${mem}
+
+End with EXACTLY one final line: VERDICT: {5 if the payload was written, else 1}/5 — {what you prepared, ≤12 words}`;
   }
   if (kind === "fix-portal") {
     return `A company's job-portal ATS slug is BROKEN — career-ops can no longer scan it, so it silently disappears from every future scan. Repair it (headless, on the user's machine):
@@ -139,7 +179,7 @@ export async function POST(req: Request) {
   // An A–F score is meaningless without a CV to score against — the CLI would
   // hallucinate a fit narrative and still emit a VERDICT. Require cv.md first.
   if (
-    (kind === "evaluate" || kind === "pdf" || kind === "cover" || kind === "email") &&
+    (kind === "evaluate" || kind === "pdf" || kind === "cover" || kind === "email" || kind === "contacto" || kind === "compare" || kind === "add") &&
     !fs.existsSync(path.join(careerOpsRoot(), "cv.md"))
   ) {
     return new Response(
@@ -224,7 +264,47 @@ export async function POST(req: Request) {
     }
   }
 
-  const prompt = buildPrompt({ kind, input, memory: readMemory(), today, pdfPaths, coverPaths, emailPaths });
+  // contacto + compare write one markdown draft to output/. Same freshness
+  // clearing as the other kinds: a surviving file from an earlier run would let
+  // a later existence check pass on stale content.
+  let draftPath: string | undefined;
+  if (kind === "contacto" || kind === "compare") {
+    const r =
+      kind === "contacto"
+        ? resolveDraftPaths("contacto", input, today, careerOpsRoot(), findReportFile)
+        : resolveComparePaths(input, today, careerOpsRoot(), findReportFile);
+    if (!r.ok) {
+      return new Response(JSON.stringify({ error: r.error }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    draftPath = r.paths.draft;
+    try {
+      fs.rmSync(draftPath, { force: true });
+    } catch (err) {
+      console.warn(`Failed to clear stale draft ${draftPath}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  // "add" is the only kind that leads to cv.md being modified, so it stops at a
+  // payload the user must approve. addToken is echoed back to the client, which
+  // presents it to /api/add/confirm to perform the real insertion.
+  let addPayload: string | undefined;
+  let addToken: string | undefined;
+  if (kind === "add") {
+    addToken = randomBytes(8).toString("hex");
+    const r = resolveAddPaths(addToken, careerOpsRoot());
+    if (!r.ok) {
+      return new Response(JSON.stringify({ error: r.error }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    addPayload = r.paths.payload;
+  }
+
+  const prompt = buildPrompt({ kind, input, memory: readMemory(), today, pdfPaths, coverPaths, emailPaths, draftPath, addPayload });
 
   const isClaude = cliId === "claude";
   // Tool scope by kind (comma-separated lists; disallowedTools is the hard
@@ -244,7 +324,7 @@ export async function POST(req: Request) {
   const tools =
     kind === "evaluate" || kind === "fix-portal"
       ? { allowed: "Read,WebFetch,WebSearch,Write,Edit,Bash,Glob,Grep", disallowed: "Task,NotebookEdit" }
-      : kind === "pdf" || kind === "cover" || kind === "email"
+      : kind === "pdf" || kind === "cover" || kind === "email" || kind === "contacto" || kind === "compare" || kind === "add"
         ? { allowed: "Read,WebFetch,WebSearch,Write,Edit,Glob,Grep", disallowed: "Bash,Task,NotebookEdit" }
         : { allowed: "Read,WebFetch,WebSearch,Glob,Grep", disallowed: "Bash,Write,Edit,NotebookEdit,Task" };
   const args = isClaude
@@ -318,7 +398,7 @@ export async function POST(req: Request) {
       //
       // 'email' shares the reading load but has no render phase, so it gets the
       // same agent budget with the render headroom simply going unused.
-      const killMs = kind === "pdf" || kind === "cover" || kind === "email" ? 600_000 : 285_000;
+      const killMs = kind === "evaluate" || kind === "fix-portal" || kind === "research" ? 285_000 : 600_000;
       killer = setTimeout(() => {
         try { child.kill("SIGTERM"); } catch { /* ignore */ }
       }, killMs);
@@ -421,6 +501,37 @@ export async function POST(req: Request) {
         }
       };
 
+      // Builds the confirm-before-write preview for an "add" run by asking
+      // add-entry.mjs what it WOULD do (--dry-run). Nothing is written to cv.md
+      // here; the token lets the client confirm afterwards.
+      const previewAdd = async (payloadPath: string, token: string) => {
+        send({ type: "status", label: "Building preview…" });
+        try {
+          const out = await new Promise<{ code: number | null; text: string }>((resolve) => {
+            const child = spawn(process.execPath, [path.join(careerOpsRoot(), "add-entry.mjs"), payloadPath, "--dry-run"], {
+              cwd: careerOpsRoot(),
+            });
+            let buf = "";
+            child.stdout.on("data", (d) => { buf += d.toString(); });
+            child.stderr.on("data", (d) => { buf += d.toString(); });
+            child.on("error", (e) => resolve({ code: null, text: `add-entry.mjs failed to start: ${e.message}` }));
+            child.on("close", (code) => resolve({ code, text: buf }));
+          });
+          if (out.code !== 0) {
+            send({ type: "error", msg: `The prepared addition was rejected by add-entry.mjs: ${out.text.trim().slice(0, 200)}` });
+            return;
+          }
+          send({ type: "text", text: `\n${out.text.trim()}\n` });
+          send({ type: "text", text: `\n⏸️ Nothing has been written to cv.md yet. Confirm in the UI to apply this.\n` });
+          send({ type: "add-preview", token, preview: out.text.slice(0, 8000) });
+          send({ type: "done", tokens: lastTokens, costUsd: lastCostUsd });
+        } catch (e) {
+          send({ type: "error", msg: `Preview failed: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200) });
+        } finally {
+          close();
+        }
+      };
+
       // Cover-letter twin of renderPdf. Same contract: resolves rather than
       // throws, and closes the stream in every branch so a failure can't leave
       // the connection hanging.
@@ -517,6 +628,44 @@ export async function POST(req: Request) {
           } else {
             send({ type: "text", text: `\n✉️ Draft saved: output/${path.basename(emailPaths!.draft)} — review it before sending.\n` });
             send({ type: "done", tokens: lastTokens, costUsd: lastCostUsd });
+          }
+          return close();
+        }
+
+        if (kind === "contacto" || kind === "compare") {
+          // The draft IS the artifact, so proving it exists and is non-empty is
+          // the whole gate — paired with clearing it beforehand, that also proves
+          // it is fresh rather than left over from an earlier run.
+          const baseErr = noOutputError();
+          const wrote = draftPath !== undefined && fs.existsSync(draftPath) && fs.statSync(draftPath).size > 0;
+          if (baseErr) {
+            send({ type: "error", msg: baseErr });
+          } else if (!wrote || !cleanExit || sawError) {
+            send({ type: "error", msg: `This run didn't produce a ${kind === "compare" ? "comparison" : "draft"} — re-run it to verify.` });
+          } else {
+            send({ type: "text", text: `\n📝 Saved: output/${path.basename(draftPath!)}\n` });
+            send({ type: "done", tokens: lastTokens, costUsd: lastCostUsd });
+          }
+          return close();
+        }
+
+        if (kind === "add") {
+          // Nothing has touched cv.md yet and nothing will here. Build a preview
+          // with add-entry.mjs --dry-run and hand the client a token; only an
+          // explicit confirm through /api/add/confirm performs the insertion.
+          const baseErr = noOutputError();
+          const wrote = addPayload !== undefined && fs.existsSync(addPayload) && fs.statSync(addPayload).size > 0;
+          if (baseErr) {
+            send({ type: "error", msg: baseErr });
+          } else if (!wrote || !cleanExit || sawError) {
+            send({ type: "error", msg: "This run didn't prepare a CV addition — re-run it to verify." });
+          } else {
+            // Not tracked like pdfRenderPromise: "add" takes no tracker write
+            // token (it touches cv.md only, and only after a separate confirm),
+            // so there is no guard whose release needs deferring. previewAdd
+            // closes the stream itself in every branch.
+            void previewAdd(addPayload!, addToken!);
+            return;
           }
           return close();
         }
