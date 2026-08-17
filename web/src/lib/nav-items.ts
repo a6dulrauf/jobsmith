@@ -1,4 +1,4 @@
-import { LayoutDashboard, Compass, ListChecks, Send, Radar, BarChart3, Lightbulb, GitCompare, MessagesSquare, FileText, FolderOpen, IdCard, Settings } from "lucide-react";
+import { LayoutDashboard, Compass, ListChecks, Send, Radar, BarChart3, Lightbulb, GitCompare, MessagesSquare, FileLock2, FileText, FolderOpen, IdCard, Settings } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 
 // Single source of truth for the app's primary destinations — shared by the
@@ -20,6 +20,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/insights", label: "Insights", icon: Lightbulb },
   { href: "/compare", label: "Compare", icon: GitCompare },
   { href: "/interview", label: "Interview", icon: MessagesSquare },
+  { href: "/offer", label: "Offer", icon: FileLock2 },
   { href: "/cv", label: "CV", icon: FileText },
   { href: "/profile", label: "Profile", icon: IdCard },
   { href: "/documents", label: "Documents", icon: FolderOpen },
