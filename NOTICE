@@ -1,0 +1,57 @@
+Jobsmith
+========
+
+Jobsmith is a fork of career-ops, extended with a full local web portal, a
+GitHub Actions job scanner, and a sandbox harness for verification.
+
+Upstream work
+-------------
+
+The substantial majority of this codebase is the work of
+Santiago Fernández de Valderrama (https://santifer.io), released as career-ops
+under the MIT License:
+
+    https://github.com/santifer/career-ops
+    Copyright (c) 2026 Santiago Fernández de Valderrama
+
+That includes, and is not limited to:
+
+  - the portal scanner and its 75+ ATS/job-board provider modules
+  - the A–G evaluation methodology, including the Block G posting-legitimacy
+    and ghost-job analysis
+  - every mode prompt under modes/ (evaluation, tailoring, cover letters,
+    interview suite, offer preparation, and the market-specific mode sets)
+  - the CV/cover-letter generation pipeline and its fact-check gate
+    (verify-cv-facts.mjs)
+  - the tracker, its integrity tooling, and the analytics scripts
+  - the Go terminal dashboard and the initial Next.js web application
+
+The MIT License text is preserved verbatim in LICENSE, as that license
+requires. Its copyright notice has not been altered or removed.
+
+The "career-ops" name and brand are trademarks of Santiago Fernández de
+Valderrama and are NOT licensed by MIT. See the upstream project's
+TRADEMARK.md. Jobsmith is deliberately named distinctly, describes itself as a
+fork, and claims no affiliation, endorsement, sponsorship, or certification by
+the career-ops project or its maintainer.
+
+Additions in this fork
+----------------------
+
+Copyright (c) 2026 Abdul Rauf, also under the MIT License:
+
+  - web portal additions: the Insights, Profile, Documents, Compare, Interview
+    and Offer pages; cover-letter, application-email, outreach, add-to-CV,
+    outcome-recording and tracker-maintenance flows; and the associated
+    /api routes and libraries
+  - scanner/ — a GitHub Actions daily scan with a zero-dependency SMTP email
+    digest
+  - make-sandbox.mjs — a fixture-backed sandbox harness for verifying changes
+    against a fictional persona instead of real career data
+
+Where the fork's additions orchestrate upstream modes, they run those modes
+rather than reimplementing them, so their behaviour remains the upstream
+project's.
+
+Full commit history, including every upstream commit and its original author,
+is preserved in this repository's git history.

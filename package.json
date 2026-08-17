@@ -1,7 +1,7 @@
 {
-  "name": "career-ops",
-  "version": "1.24.0",
-  "description": "AI-powered job search pipeline — works with any AI coding CLI (Claude Code, Codex, OpenCode, Antigravity, Grok, Qwen, Kimi, Copilot)",
+  "name": "jobsmith",
+  "version": "1.0.0",
+  "description": "Local-first job-search workbench. One CV, forged per job. A fork of career-ops.",
   "private": true,
   "engines": {
     "node": ">=18"
@@ -24,10 +24,6 @@
     "cover-letter": "node generate-cover-letter.mjs --payload",
     "cv:verify-facts": "node verify-cv-facts.mjs",
     "sync-check": "node cv-sync-check.mjs",
-    "update:check": "node update-system.mjs check",
-    "update:test": "node updater-migration-tests.mjs",
-    "update": "node update-system.mjs apply",
-    "rollback": "node update-system.mjs rollback",
     "liveness": "node check-liveness.mjs",
     "extract": "node browser-extract.mjs",
     "scan": "node scan.mjs",
@@ -60,30 +56,26 @@
     "build:dashboard": "node build-dashboard.mjs",
     "serve:dashboard": "cd dashboard && go run . --path ..",
     "postinstall": "npx playwright install chromium --with-deps || npx playwright install chromium --with-deps",
-    "manifesto": "node manifesto.mjs"
+    "manifesto": "node manifesto.mjs",
+    "scan:daily": "node scanner/run-scan.mjs",
+    "scan:daily:dry": "node scanner/run-scan.mjs --dry-run",
+    "sandbox": "node make-sandbox.mjs",
+    "test:digest": "node scanner/digest.mjs --self-test"
   },
   "keywords": [
-    "ai",
     "job-search",
-    "claude-code",
-    "opencode",
+    "cv",
+    "ats",
     "career",
-    "career-ops",
-    "careerops",
-    "automation",
-    "codex",
-    "antigravity",
-    "qwen",
-    "kimi",
-    "copilot",
-    "grok",
-    "ai-agent-skill"
+    "claude-code",
+    "ai-agent-skill",
+    "jobsmith"
   ],
-  "author": "Santiago Fernández de Valderrama <hi@santifer.io> (https://santifer.io)",
-  "homepage": "https://santifer.io",
+  "author": "Abdul Rauf",
+  "homepage": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/santifer/career-ops"
+    "url": ""
   },
   "license": "MIT",
   "dependencies": {

@@ -253,7 +253,9 @@ const scripts = [
   // default portals.yml because end-user workspaces often have a real user-layer
   // portals file that would trigger a live remote sweep during tests.
   { name: 'verify-portals.mjs --file .tmp-test-missing-portals.yml', expectExit: 0 },
-  { name: 'update-system.mjs check', expectExit: 0 },
+  // update-system.mjs is deliberately absent from this smoke list: in this fork it
+  // refuses to run at all. Asserted properly in its own check below, rather than
+  // via allowFail — whose "expected without user data" message would be wrong.
   { name: 'seed-fixture.mjs --self-test', expectExit: 0 },
   { name: 'archive-posting.mjs --help', expectExit: 0 },
 ];
@@ -4549,6 +4551,26 @@ if (
   pass('career-ops skill router documents the Codex invocation model');
 } else {
   fail('career-ops skill router is missing Codex invocation guidance');
+}
+
+console.log('\n12b-fork. Updater is disabled in this fork');
+{
+  // Jobsmith is a hard fork of career-ops. Every branded file — README.md,
+  // package.json, AGENTS.md, CLAUDE.md, LICENSE — is on update-system.mjs's
+  // SYSTEM_PATHS list, so running the updater would silently restore career-ops's
+  // identity over this fork's. It must refuse, and say why.
+  const r = spawnSync(NODE, [join(ROOT, 'update-system.mjs'), 'check'], { encoding: 'utf-8' });
+  const out = `${r.stdout ?? ''}${r.stderr ?? ''}`;
+  if (r.status === 1 && /disabled in Jobsmith/.test(out)) {
+    pass('update-system.mjs refuses to run and explains why');
+  } else {
+    fail(`update-system.mjs should exit 1 with an explanation; got status ${r.status}`);
+  }
+  if (/cherry-pick/.test(out)) {
+    pass('the refusal tells you how to take an upstream change deliberately');
+  } else {
+    fail('the refusal should point at the cherry-pick path for upstream changes');
+  }
 }
 
 console.log('\n12c. Codex documentation guidance');
