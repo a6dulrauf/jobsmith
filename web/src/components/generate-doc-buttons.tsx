@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { Loader2, Mail, PenLine, RotateCcw } from "lucide-react";
+import { Loader2, Mail, PenLine, RotateCcw, UserSearch } from "lucide-react";
 import { useJobs } from "@/components/jobs/job-store";
 import { CostBadge } from "@/components/cost/cost-badge";
 
@@ -14,7 +14,7 @@ import { CostBadge } from "@/components/cost/cost-badge";
 // Neither ever sends anything. `email` writes a DRAFT to output/ and stops;
 // that human-in-the-loop guarantee is the whole point of career-ops.
 
-type Kind = "cover" | "email";
+type Kind = "cover" | "email" | "contacto";
 
 const SPEC: Record<Kind, { label: string; busy: string; title: string; sub: string; Icon: typeof Mail }> = {
   cover: {
@@ -30,6 +30,13 @@ const SPEC: Record<Kind, { label: string; busy: string; title: string; sub: stri
     title: "Application email",
     sub: "draft only — never sent",
     Icon: Mail,
+  },
+  contacto: {
+    label: "Find a contact",
+    busy: "Searching…",
+    title: "Outreach",
+    sub: "hiring manager or recruiter + a short message",
+    Icon: UserSearch,
   },
 };
 
@@ -93,6 +100,7 @@ export function GenerateDocButtons({ n, company }: { n: string; company: string 
     <>
       <DocButton kind="cover" n={n} company={company} />
       <DocButton kind="email" n={n} company={company} />
+      <DocButton kind="contacto" n={n} company={company} />
     </>
   );
 }

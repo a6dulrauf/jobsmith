@@ -189,6 +189,16 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
                   if (vm) verdictLine = vm[0];
                   text = full.slice(-8000);
                   patch(id, (j) => ({ ...j, text }));
+                } else if (ev.type === "add-preview") {
+                  // The "add" flow stops at a preview: cv.md is the source of
+                  // truth every other mode reads, so the insertion needs an
+                  // explicit confirmation. Hand the token + preview to whichever
+                  // component is showing the gate.
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(
+                      new CustomEvent("co-add-preview", { detail: { token: ev.token, preview: ev.preview } }),
+                    );
+                  }
                 } else if (ev.type === "done") {
                   // finish happens on stream-close; capture the per-run cost it carries
                   if (typeof ev.tokens === "number") doneTokens = ev.tokens;

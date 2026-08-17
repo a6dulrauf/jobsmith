@@ -142,22 +142,84 @@ export function resolveCoverPaths(input, today, root, findReportFile) {
   };
 }
 
+/** Draft kinds that write a finished markdown file straight to output/. The
+ *  prefix becomes the filename prefix, so it is allowlisted rather than
+ *  interpolated from anything a request controls. */
+const DRAFT_PREFIXES = new Set(["email", "contacto"]);
+
 /**
- * Final draft path for an "email" run.
+ * Final draft path for a text-only run (application email, outreach message).
  *
- * No scratch/render split: an application email is text, so the agent writes
- * the finished markdown draft straight to output/, where the Documents page
- * picks it up. It is a DRAFT — career-ops never sends anything.
+ * No scratch/render split: these are text, so the agent writes the finished
+ * markdown straight to output/, where the Documents page picks it up. They are
+ * DRAFTS — career-ops never sends anything.
  *
+ * @param {string} prefix - "email" | "contacto"
  * @returns {{ok: true, paths: {draft: string}} | {ok: false, error: string}}
  */
-export function resolveEmailPaths(input, today, root, findReportFile) {
+export function resolveDraftPaths(prefix, input, today, root, findReportFile) {
+  if (!DRAFT_PREFIXES.has(prefix)) return { ok: false, error: `Unknown draft kind: "${prefix}"` };
   const resolved = resolveReport(input, root, findReportFile);
   if (!resolved.ok) return resolved;
-  const { companySlug } = resolveSlugs(resolved.reportFile, root, "resolveEmailPaths");
+  const { companySlug } = resolveSlugs(resolved.reportFile, root, "resolveDraftPaths");
   fs.mkdirSync(path.join(root, "output"), { recursive: true });
   return {
     ok: true,
-    paths: { draft: path.join(root, "output", `email-${companySlug}-${today}.md`) },
+    paths: { draft: path.join(root, "output", `${prefix}-${companySlug}-${today}.md`) },
   };
+}
+
+/** Back-compat wrapper — the email kind predates the generalization. */
+export function resolveEmailPaths(input, today, root, findReportFile) {
+  return resolveDraftPaths("email", input, today, root, findReportFile);
+}
+
+/**
+ * Paths for a "compare" run across several evaluated offers.
+ *
+ * Input is a comma-separated list of report numbers, so there is no single
+ * company to name the file after — the date plus the report numbers identifies
+ * it. Every number is validated individually and must resolve to a real report;
+ * a comparison against a missing report would be built on nothing.
+ *
+ * @returns {{ok: true, paths: {draft: string}, numbers: string[]} | {ok: false, error: string}}
+ */
+export function resolveComparePaths(input, today, root, findReportFile) {
+  if (typeof input !== "string" || input.trim() === "") {
+    return { ok: false, error: "Pick at least two evaluated offers to compare." };
+  }
+  const numbers = input.split(",").map((s) => s.trim()).filter(Boolean);
+  if (numbers.length < 2) return { ok: false, error: "Comparing needs at least two offers." };
+  if (numbers.length > 6) return { ok: false, error: "Compare at most six offers at once." };
+  for (const n of numbers) {
+    if (!/^\d+$/.test(n)) return { ok: false, error: `Invalid report selector: "${n}"` };
+    if (!findReportFile(n)) return { ok: false, error: `No report #${n} found — evaluate it first.` };
+  }
+  fs.mkdirSync(path.join(root, "output"), { recursive: true });
+  return {
+    ok: true,
+    numbers,
+    paths: { draft: path.join(root, "output", `compare-${numbers.join("-")}-${today}.md`) },
+  };
+}
+
+/**
+ * Scratch payload path for an "add to CV" run.
+ *
+ * cv.md is the single source of truth every other mode reads, so this flow is
+ * deliberately two-step: the agent writes a payload here, the backend runs
+ * add-entry.mjs --dry-run to build a preview, and only an explicit confirmation
+ * runs the real insertion. Nothing touches cv.md without the user seeing it.
+ *
+ * @returns {{ok: true, paths: {payload: string}} | {ok: false, error: string}}
+ */
+export function resolveAddPaths(token, root) {
+  // The token identifies one add session. Generated server-side, but validated
+  // anyway because it lands in a filename.
+  if (typeof token !== "string" || !/^[a-z0-9]{6,32}$/.test(token)) {
+    return { ok: false, error: "Invalid add session token." };
+  }
+  const scratchDir = path.join(root, ".career-ops-web", "pdf-tmp");
+  fs.mkdirSync(scratchDir, { recursive: true });
+  return { ok: true, paths: { payload: path.join(scratchDir, `add-${token}.json`) } };
 }
