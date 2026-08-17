@@ -1,0 +1,78 @@
+name: Jobsmith daily scan
+
+on:
+  schedule:
+    # 06:00 UTC = 11:00 Karachi. GitHub's scheduler can run late under load, so
+    # treat this as "some time that morning" rather than a precise alarm.
+    - cron: "0 6 * * *"
+  # Lets you test the whole thing immediately instead of waiting for tomorrow.
+  workflow_dispatch:
+
+# The ledger (data/scan-history.tsv) is committed back after every run. Without
+# this permission the commit fails and every run re-reports the same jobs forever.
+permissions:
+  contents: write
+
+# Two overlapping runs would both scan, both append to the ledger, and race the
+# commit. One at a time.
+concurrency:
+  group: daily-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      # js-yaml is the only runtime dependency. Playwright is NOT needed: the
+      # scanner imports it lazily and only for --verify, which this job does not
+      # use. Installing a browser here would add minutes and hundreds of MB for
+      # nothing.
+      # The scanner needs js-yaml only. Playwright is imported lazily and solely for
+      # --verify, which this job never passes, so no browser download here.
+      - run: npm ci --omit=dev --ignore-scripts
+
+      - name: Scan and email
+        env:
+          DIGEST_SMTP_HOST: ${{ secrets.DIGEST_SMTP_HOST }}
+          DIGEST_SMTP_PORT: ${{ secrets.DIGEST_SMTP_PORT }}
+          DIGEST_SMTP_USER: ${{ secrets.DIGEST_SMTP_USER }}
+          DIGEST_SMTP_PASS: ${{ secrets.DIGEST_SMTP_PASS }}
+          DIGEST_TO: ${{ secrets.DIGEST_TO }}
+        run: node scanner/run-scan.mjs
+
+      # Persist the dedup ledger so tomorrow only reports what is actually new.
+      # Runs even when the scan step failed: a partial scan still recorded real
+      # observations, and dropping them would re-report those jobs tomorrow.
+      - name: Commit the dedup ledger
+        if: always()
+        run: |
+          if git diff --quiet -- data/scan-history.tsv data/pipeline.md; then
+            echo "Ledger unchanged — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "career-ops scanner"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/scan-history.tsv data/pipeline.md
+          git commit -m "chore: scan ledger $(date -u +%Y-%m-%d)"
+          # A concurrent push (e.g. you editing portals.yml) would otherwise fail
+          # the job; rebase and retry once before giving up.
+          git push || (git pull --rebase --autostash && git push)
+
+      # The scanner's own console output, kept for when an email looks wrong and
+      # you need to see what the run actually did.
+      - name: Upload the new-postings payload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: new-postings
+          path: data/new-postings.json
+          if-no-files-found: ignore
+          retention-days: 14

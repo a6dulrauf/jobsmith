@@ -120,3 +120,20 @@ plan/
 # (see DATA_CONTRACT.md). Re-include them past the unanchored user-layer
 # patterns above (cv.md, portals.yml).
 !test-fixtures/**
+
+# ── Jobsmith fork ───────────────────────────────────────────────────────────
+# The GitHub Actions scan needs portals.yml in the repo, and it holds no personal
+# data — target-role keywords, location filters and a company list. cv.md, the
+# profile, the tracker and every report stay ignored above.
+#
+# It still describes what you are looking for and where, so keep YOUR instance
+# private. The published fork ships templates/portals.example.yml instead.
+!portals.yml
+
+# The scan ledger must be committed for CI dedup to work across runs; without it
+# every run re-reports the same jobs.
+!data/scan-history.tsv
+!data/pipeline.md
+
+# Sandbox builds are disposable.
+/jobsmith-sandbox/

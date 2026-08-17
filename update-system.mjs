@@ -1,5 +1,34 @@
 #!/usr/bin/env node
 
+// ─── DISABLED IN THIS FORK ───────────────────────────────────────────────────
+// Jobsmith is a hard fork. This updater pulls upstream career-ops files over an
+// explicit SYSTEM_PATHS allowlist — which includes README.md, package.json,
+// AGENTS.md, CLAUDE.md and LICENSE. Running it here would restore career-ops's
+// identity over this fork's, silently.
+//
+// The file is kept because the test suite reads its SYSTEM_PATHS array to check
+// that every system file is accounted for, and that check is worth keeping.
+//
+// To bring an upstream change over deliberately:
+//   git remote add upstream https://github.com/santifer/career-ops.git
+//   git fetch upstream && git log upstream/main --oneline
+//   git cherry-pick <sha>          # review it first
+if (import.meta.url === `file://${process.argv[1]}`) {
+  console.error(`update-system.mjs is disabled in Jobsmith (a hard fork of career-ops).
+
+Running it would overwrite this fork's README, package.json, AGENTS.md and
+LICENSE with career-ops's versions.
+
+To take a specific upstream change instead:
+  git remote add upstream https://github.com/santifer/career-ops.git
+  git fetch upstream && git log upstream/main --oneline
+  git cherry-pick <sha>
+`);
+  process.exit(1);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+
 /**
  * update-system.mjs — Safe auto-updater for career-ops
  *
@@ -58,6 +87,9 @@ export const REEXEC_BUFFER_TIMEOUT_MS = parsePositiveInt(process.env.CAREER_OPS_
 
 // System layer paths — ONLY these files get updated
 const SYSTEM_PATHS = [
+  'make-sandbox.mjs',
+  'scanner/run-scan.mjs',
+  'scanner/digest.mjs',
   'modes/README.md',
   'modes/_shared.md',
   'modes/_writing.md',
