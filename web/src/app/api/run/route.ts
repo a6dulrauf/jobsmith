@@ -3,8 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { resolveCli } from "@/lib/clis";
 import { careerOpsRoot, readMemory, findReportFile } from "@/lib/career-ops";
-import { resolvePdfPaths, type PdfPaths } from "@/lib/pdf-paths.mjs";
+import { resolvePdfPaths, resolveCoverPaths, resolveEmailPaths, type PdfPaths } from "@/lib/pdf-paths.mjs";
 import { renderAndMarkPdf } from "@/lib/pdf-render.mjs";
+import { renderCoverLetter } from "@/lib/cover-render.mjs";
 import { acquireTrackerWrite, releaseTrackerWrite } from "@/lib/core/run-registry";
 
 export const runtime = "nodejs";
@@ -17,9 +18,17 @@ export const maxDuration = 800; // a real oferta evaluation / pdf-mode CV tailor
 // (reserve-report-num.mjs → reports/ → batch/tracker-additions/ → merge-tracker.mjs),
 // so a web evaluation is byte-identical to a CLI one (single source of truth, no
 // drift). kind "research" stays read-only. Streams progress as NDJSON events.
-type BuildPromptArgs = { kind: string; input: string; memory: string; today: string; pdfPaths?: PdfPaths };
+type BuildPromptArgs = {
+  kind: string;
+  input: string;
+  memory: string;
+  today: string;
+  pdfPaths?: PdfPaths;
+  coverPaths?: { payload: string; finalPdf: string };
+  emailPaths?: { draft: string };
+};
 
-function buildPrompt({ kind, input, memory, today, pdfPaths }: BuildPromptArgs): string {
+function buildPrompt({ kind, input, memory, today, pdfPaths, coverPaths, emailPaths }: BuildPromptArgs): string {
   const mem = memory.trim() ? `\n\nDurable notes about the user (from their profile):\n${memory.trim()}\n` : "";
   if (kind === "research") {
     return `You are investigating the user's OWN work / portfolio to surface job-search-relevant strengths, headless. Investigate the target (use WebFetch for URLs; read local files if referenced) and report: what it is, why it is impressive, and how to leverage it in their job search — which roles/claims it supports and how to frame it on a CV. Be specific, honest, and encouraging.${mem}
@@ -42,6 +51,28 @@ Target: ${input}`;
 Do NOT run generate-pdf.mjs yourself and do NOT render a PDF — the platform renders it after you finish, from the HTML and format file you wrote. Do NOT touch data/applications.md — the platform updates the tracker's PDF column itself, only after a confirmed successful render. Do not submit anything anywhere.
 
 End with EXACTLY one final line: VERDICT: {5 if the HTML and format file were written, else 1}/5 — {a one-line summary, ≤12 words}`;
+  }
+  if (kind === "cover") {
+    // Same content/render split as "pdf" — see the note there. The agent writes
+    // the payload only; the backend runs generate-cover-letter.mjs afterwards.
+    return `You are writing the user's cover letter for application #${input}, headless, on their machine. Run the REAL career-ops "cover" mode's CONTENT step — follow modes/cover.md EXACTLY (do not improvise a structure or a format).
+1. Read modes/cover.md, cv.md, config/profile.yml, modes/_profile.md, and the evaluation report at reports/${input}-*.md (for the company, role, JD keywords and the fit analysis already done).
+2. Also read voice-dna.md and modes/_writing.md if they exist, and apply them — the letter must sound like the user, not like a template.
+3. Write the letter per modes/cover.md. Ground EVERY claim in cv.md or the report. NEVER invent an achievement, a metric, an employer, or a motivation. If the report names gaps, do not paper over them.
+4. Write the payload JSON that modes/cover.md specifies (candidate + letter blocks; letter requires role_title, opening and profile_intro) to EXACTLY this path, and nothing else: ${coverPaths?.payload}
+Do NOT run generate-cover-letter.mjs yourself and do NOT render a PDF — the platform renders it after you finish, from the payload you wrote. Do NOT modify cv.md, the tracker, or any report. Do not send or submit anything anywhere.${mem}
+
+End with EXACTLY one final line: VERDICT: {5 if the payload was written, else 1}/5 — {a one-line summary, ≤12 words}`;
+  }
+  if (kind === "email") {
+    return `You are drafting a formal application email for application #${input}, headless, on the user's machine. Run the REAL career-ops "email" mode — follow modes/email.md EXACTLY.
+1. Read modes/email.md, cv.md, config/profile.yml, modes/_profile.md, and the evaluation report at reports/${input}-*.md.
+2. Draft the email per modes/email.md: subject line, body, attachment checklist, and the contact block from config/profile.yml. Ground every fit point in cv.md or the report — never invent one.
+3. Write the finished draft as markdown to EXACTLY this path: ${emailPaths?.draft}
+   Structure it with clear headings: "## Subject", "## Body", "## Attachments", "## Contact".
+This is a DRAFT ONLY. career-ops never sends, submits, or clicks anything — the user sends it themselves. Do NOT modify cv.md, the tracker, or any report.${mem}
+
+End with EXACTLY one final line: VERDICT: {5 if the draft was written, else 1}/5 — {a one-line summary, ≤12 words}`;
   }
   if (kind === "fix-portal") {
     return `A company's job-portal ATS slug is BROKEN — career-ops can no longer scan it, so it silently disappears from every future scan. Repair it (headless, on the user's machine):
@@ -107,7 +138,10 @@ export async function POST(req: Request) {
 
   // An A–F score is meaningless without a CV to score against — the CLI would
   // hallucinate a fit narrative and still emit a VERDICT. Require cv.md first.
-  if ((kind === "evaluate" || kind === "pdf") && !fs.existsSync(path.join(careerOpsRoot(), "cv.md"))) {
+  if (
+    (kind === "evaluate" || kind === "pdf" || kind === "cover" || kind === "email") &&
+    !fs.existsSync(path.join(careerOpsRoot(), "cv.md"))
+  ) {
     return new Response(
       JSON.stringify({ error: "Add your CV first so I can score this against you — drop it on the home page." }),
       { status: 400, headers: { "Content-Type": "application/json" } },
@@ -148,7 +182,49 @@ export async function POST(req: Request) {
     }
   }
 
-  const prompt = buildPrompt({ kind, input, memory: readMemory(), today, pdfPaths });
+  // Cover letters use the same backend-owns-naming split as "pdf": the agent
+  // writes only the payload JSON, the backend renders it (a browser launch can
+  // be blocked by the agent CLI's sandbox with nobody present to approve it).
+  let coverPaths: { payload: string; finalPdf: string } | undefined;
+  if (kind === "cover") {
+    const r = resolveCoverPaths(input, today, careerOpsRoot(), findReportFile);
+    if (!r.ok) {
+      return new Response(JSON.stringify({ error: r.error }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    coverPaths = r.paths;
+    // Same freshness invariant as the PDF scratch clearing above: if the payload
+    // survives from an earlier run, a later existence check would pass on a
+    // stale file and render last week's letter as if it were new.
+    try {
+      fs.rmSync(coverPaths.payload, { force: true });
+    } catch (err) {
+      console.warn(`Failed to clear stale cover payload ${coverPaths.payload}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  // An application email is plain text, so there is no render step — the agent
+  // writes the finished markdown draft straight to output/.
+  let emailPaths: { draft: string } | undefined;
+  if (kind === "email") {
+    const r = resolveEmailPaths(input, today, careerOpsRoot(), findReportFile);
+    if (!r.ok) {
+      return new Response(JSON.stringify({ error: r.error }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    emailPaths = r.paths;
+    try {
+      fs.rmSync(emailPaths.draft, { force: true });
+    } catch (err) {
+      console.warn(`Failed to clear stale email draft ${emailPaths.draft}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  const prompt = buildPrompt({ kind, input, memory: readMemory(), today, pdfPaths, coverPaths, emailPaths });
 
   const isClaude = cliId === "claude";
   // Tool scope by kind (comma-separated lists; disallowedTools is the hard
@@ -161,10 +237,14 @@ export async function POST(req: Request) {
   // incident this fix closes). 'research' stays fully read-only. Task
   // (sub-agents) is always blocked (runaway cost). NEVER auto-submits — that is
   // a prompt-level guarantee.
+  // 'cover'/'email' sit in the same bucket as 'pdf': they produce content and
+  // write exactly one backend-named artifact, so they get Write but NOT Bash.
+  // Withholding Bash is what stops an agent improvising its own render or
+  // fallback path — the #2172 failure mode.
   const tools =
     kind === "evaluate" || kind === "fix-portal"
       ? { allowed: "Read,WebFetch,WebSearch,Write,Edit,Bash,Glob,Grep", disallowed: "Task,NotebookEdit" }
-      : kind === "pdf"
+      : kind === "pdf" || kind === "cover" || kind === "email"
         ? { allowed: "Read,WebFetch,WebSearch,Write,Edit,Glob,Grep", disallowed: "Bash,Task,NotebookEdit" }
         : { allowed: "Read,WebFetch,WebSearch,Glob,Grep", disallowed: "Bash,Write,Edit,NotebookEdit,Task" };
   const args = isClaude
@@ -227,7 +307,18 @@ export async function POST(req: Request) {
       // generate-pdf.mjs mid-render. 600s agent / ~200s render is ample —
       // a Chromium PDF render normally takes low tens of seconds even with a
       // cold Playwright launch.
-      const killMs = kind === "pdf" ? 600_000 : 285_000;
+      //
+      // 'cover' belongs in the same bucket as 'pdf', and for the same two
+      // reasons. Its agent phase is comparably heavy — it reads modes/cover.md,
+      // cv.md, profile.yml, _profile.md, the full A–G report, voice-dna.md and
+      // _writing.md before writing a line — and it is likewise followed by an
+      // un-timed backend render (renderCover). Measured: a real run against
+      // report #1 was still reading grounding files at 286s and got SIGTERMed
+      // by the old 285s budget, one second over, with nothing written.
+      //
+      // 'email' shares the reading load but has no render phase, so it gets the
+      // same agent budget with the render headroom simply going unused.
+      const killMs = kind === "pdf" || kind === "cover" || kind === "email" ? 600_000 : 285_000;
       killer = setTimeout(() => {
         try { child.kill("SIGTERM"); } catch { /* ignore */ }
       }, killMs);
@@ -330,6 +421,31 @@ export async function POST(req: Request) {
         }
       };
 
+      // Cover-letter twin of renderPdf. Same contract: resolves rather than
+      // throws, and closes the stream in every branch so a failure can't leave
+      // the connection hanging.
+      const renderCover = async (paths: { payload: string; finalPdf: string }) => {
+        send({ type: "status", label: "Rendering cover letter…" });
+        try {
+          const result = await renderCoverLetter({
+            spawnFn: spawn,
+            execPath: process.execPath,
+            root: careerOpsRoot(),
+            coverPaths: paths,
+          });
+          if (result.kind !== "ok") {
+            send({ type: "error", msg: result.error.slice(0, 200) });
+            return;
+          }
+          send({ type: "text", text: `\n📄 Cover letter: output/${result.pdf}\n` });
+          send({ type: "done", tokens: lastTokens, costUsd: lastCostUsd });
+        } catch (e) {
+          send({ type: "error", msg: `Cover-letter rendering crashed unexpectedly: ${e instanceof Error ? e.message : String(e)}`.slice(0, 200) });
+        } finally {
+          close();
+        }
+      };
+
       child.on("error", (e) => { send({ type: "error", msg: e.message }); close(); });
       child.on("close", (code) => {
         // A client disconnect can fire cancel() (which kills `child`) before
@@ -368,6 +484,39 @@ export async function POST(req: Request) {
             // settles; close() happens once rendering finishes, not here.
             pdfRenderPromise = renderPdf(pdfPaths);
             return;
+          }
+          return close();
+        }
+
+        if (kind === "cover") {
+          // Existence is checked by validateCoverPayload inside renderCover, so
+          // this gate only has to catch the "CLI never really ran" shapes.
+          const baseErr = noOutputError();
+          if (baseErr) {
+            send({ type: "error", msg: baseErr });
+          } else if (!cleanExit || sawError || !coverPaths) {
+            send({ type: "error", msg: "This run didn't produce a cover letter — re-run it to verify." });
+          } else {
+            renderCover(coverPaths);
+            return;
+          }
+          return close();
+        }
+
+        if (kind === "email") {
+          // No render step — the draft IS the artifact, so proving it exists and
+          // is non-empty is the whole honesty gate. Paired with clearing the path
+          // before the run, this also proves it is fresh rather than a leftover.
+          const baseErr = noOutputError();
+          const wroteDraft =
+            emailPaths !== undefined && fs.existsSync(emailPaths.draft) && fs.statSync(emailPaths.draft).size > 0;
+          if (baseErr) {
+            send({ type: "error", msg: baseErr });
+          } else if (!wroteDraft || !cleanExit || sawError) {
+            send({ type: "error", msg: "This run didn't produce an email draft — re-run it to verify." });
+          } else {
+            send({ type: "text", text: `\n✉️ Draft saved: output/${path.basename(emailPaths!.draft)} — review it before sending.\n` });
+            send({ type: "done", tokens: lastTokens, costUsd: lastCostUsd });
           }
           return close();
         }
