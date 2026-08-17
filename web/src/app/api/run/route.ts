@@ -29,9 +29,10 @@ type BuildPromptArgs = {
   emailPaths?: { draft: string };
   draftPath?: string;
   addPayload?: string;
+  debriefNotes?: string;
 };
 
-function buildPrompt({ kind, input, memory, today, pdfPaths, coverPaths, emailPaths, draftPath, addPayload }: BuildPromptArgs): string {
+function buildPrompt({ kind, input, memory, today, pdfPaths, coverPaths, emailPaths, draftPath, addPayload, debriefNotes }: BuildPromptArgs): string {
   const mem = memory.trim() ? `\n\nDurable notes about the user (from their profile):\n${memory.trim()}\n` : "";
   if (kind === "research") {
     return `You are investigating the user's OWN work / portfolio to surface job-search-relevant strengths, headless. Investigate the target (use WebFetch for URLs; read local files if referenced) and report: what it is, why it is impressive, and how to leverage it in their job search — which roles/claims it supports and how to frame it on a CV. Be specific, honest, and encouraging.${mem}
@@ -114,6 +115,53 @@ CRITICAL: do NOT run add-entry.mjs and do NOT edit cv.md or article-digest.md yo
 
 End with EXACTLY one final line: VERDICT: {5 if the payload was written, else 1}/5 — {what you prepared, ≤12 words}`;
   }
+  // The interview kinds each own their own canonical output path inside
+  // interview-prep/ (modes/interview/*.md define the filename conventions), so
+  // unlike cover/email the backend does NOT dictate a path — it verifies that a
+  // file appeared instead. Reusing the mode's convention is what keeps the web
+  // and CLI reading each other's prep files.
+  if (kind === "interview-prep") {
+    return `You are researching an upcoming interview for application #${input}, headless, on the user's machine. Run the REAL career-ops "interview-prep" mode — read modes/interview-prep.md and follow it EXACTLY.
+1. Read modes/interview-prep.md, cv.md, config/profile.yml, modes/_profile.md, and the evaluation report at reports/${input}-*.md.
+2. Do the sourced research the mode specifies. CITE every factual claim to where you found it. If you cannot source something, leave it out and say so — an unverifiable "fact" repeated in a real interview is worse than a gap.
+3. Write the outputs to the canonical paths modes/interview-prep.md specifies under interview-prep/ (the company/role prep file, and the question bank if the mode calls for it).
+Do NOT modify cv.md, the tracker, or any report.${mem}
+
+End with EXACTLY one final line: VERDICT: {5 if the prep file was written, else 1}/5 — {what you produced, ≤12 words}`;
+  }
+  if (kind === "interview-plan") {
+    return `You are building a time-blocked interview prep plan for application #${input}, headless, on the user's machine. Run the REAL career-ops "interview/plan" mode — read modes/interview/plan.md and follow it EXACTLY.
+1. Read modes/interview/plan.md, cv.md, config/profile.yml, the report at reports/${input}-*.md, and any existing interview-prep/ files for this company.
+2. Build the plan per the mode: time-blocked, prioritised by the gaps the evaluation ALREADY identified — do not invent new gaps.
+3. Write it to the canonical path modes/interview/plan.md specifies under interview-prep/.
+Do NOT modify cv.md, the tracker, or any report.${mem}
+
+End with EXACTLY one final line: VERDICT: {5 if the plan was written, else 1}/5 — {the shape of the plan, ≤12 words}`;
+  }
+  if (kind === "interview-debrief") {
+    return `You are running a post-interview debrief for application #${input}, headless, on the user's machine. Run the REAL career-ops "interview/debrief" mode — read modes/interview/debrief.md and follow it EXACTLY.
+
+What the user reported about the interview: ${debriefNotes}
+
+1. Read modes/interview/debrief.md, cv.md, the report at reports/${input}-*.md, interview-prep/story-bank.md and any existing prep file for this company.
+2. Debrief per the mode: what went well, what did not, which gaps showed up, and what to close before the next round. Ground it ONLY in what the user reported above plus the existing files — never invent a question they were asked or an answer they gave.
+3. Write the debrief and any story-bank additions to the canonical paths the mode specifies.
+Do NOT modify cv.md, the tracker, or any report.${mem}
+
+End with EXACTLY one final line: VERDICT: {5 if the debrief was written, else 1}/5 — {the main takeaway, ≤12 words}`;
+  }
+  if (kind === "interview-redflag") {
+    return `You are checking whether a company is safe to join, headless, on the user's machine. Run the REAL career-ops "interview-redflag" mode — read modes/interview-redflag.md and follow it EXACTLY.
+
+Company / application: ${input}
+
+1. Read modes/interview-redflag.md, and the evaluation report for this application if one exists (reports/${input}-*.md).
+2. Research per the mode using WebSearch. Present SIGNALS with sources, not accusations — note legitimate explanations for concerning findings, exactly as the mode requires. Never assert misconduct.
+3. Write the output to the canonical path modes/interview-redflag.md specifies under interview-prep/.
+Do NOT modify cv.md, the tracker, or any report.${mem}
+
+End with EXACTLY one final line: VERDICT: {0-5 how clean the company looks}/5 — {the headline signal, ≤12 words}`;
+  }
   if (kind === "fix-portal") {
     return `A company's job-portal ATS slug is BROKEN — career-ops can no longer scan it, so it silently disappears from every future scan. Repair it (headless, on the user's machine):
 1. Run \`node verify-portals.mjs --add "${input}"\` — it probes Greenhouse/Ashby/Lever for the company's correct ATS slug and prints the suggested ats + slug.
@@ -144,7 +192,7 @@ Posting URL: ${input}`;
 }
 
 export async function POST(req: Request) {
-  let body: { kind?: string; input?: string; cliId?: string };
+  let body: { kind?: string; input?: string; cliId?: string; notes?: string };
   try {
     body = await req.json();
   } catch {
@@ -179,7 +227,8 @@ export async function POST(req: Request) {
   // An A–F score is meaningless without a CV to score against — the CLI would
   // hallucinate a fit narrative and still emit a VERDICT. Require cv.md first.
   if (
-    (kind === "evaluate" || kind === "pdf" || kind === "cover" || kind === "email" || kind === "contacto" || kind === "compare" || kind === "add") &&
+    (kind === "evaluate" || kind === "pdf" || kind === "cover" || kind === "email" || kind === "contacto" || kind === "compare" || kind === "add" ||
+     kind === "interview-prep" || kind === "interview-plan" || kind === "interview-debrief" || kind === "interview-redflag") &&
     !fs.existsSync(path.join(careerOpsRoot(), "cv.md"))
   ) {
     return new Response(
@@ -304,7 +353,47 @@ export async function POST(req: Request) {
     addPayload = r.paths.payload;
   }
 
-  const prompt = buildPrompt({ kind, input, memory: readMemory(), today, pdfPaths, coverPaths, emailPaths, draftPath, addPayload });
+  // The interview kinds own their own output paths, so no path resolver
+  // validated their input — which left the report selector unchecked all the way
+  // into the prompt (and into an agent that has Write). Validate here.
+  //
+  // prep/plan/debrief reference reports/{input}-*.md, so they need a bare
+  // integer that resolves to a real report. redflag takes a company or
+  // application as free text, so it is length-capped and screened for control
+  // characters instead.
+  if (kind === "interview-prep" || kind === "interview-plan" || kind === "interview-debrief") {
+    if (!/^\d+$/.test(input)) {
+      return new Response(JSON.stringify({ error: `Invalid application number: "${input}"` }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (!findReportFile(input)) {
+      return new Response(JSON.stringify({ error: `No report #${input} found — evaluate this posting first.` }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+  if (kind === "interview-redflag") {
+    if (input.length > 200 || /[\0\r\n]/.test(input)) {
+      return new Response(JSON.stringify({ error: "That company/application reference isn't usable." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+  if (kind === "interview-debrief") {
+    const notes = (body.notes ?? "").trim();
+    if (notes.length < 20) {
+      return new Response(
+        JSON.stringify({ error: "Add a few sentences about how the interview went — a debrief needs something to work from." }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      );
+    }
+  }
+
+  const prompt = buildPrompt({ kind, input, memory: readMemory(), today, pdfPaths, coverPaths, emailPaths, draftPath, addPayload, debriefNotes: body.notes });
 
   const isClaude = cliId === "claude";
   // Tool scope by kind (comma-separated lists; disallowedTools is the hard
@@ -324,7 +413,8 @@ export async function POST(req: Request) {
   const tools =
     kind === "evaluate" || kind === "fix-portal"
       ? { allowed: "Read,WebFetch,WebSearch,Write,Edit,Bash,Glob,Grep", disallowed: "Task,NotebookEdit" }
-      : kind === "pdf" || kind === "cover" || kind === "email" || kind === "contacto" || kind === "compare" || kind === "add"
+      : kind === "pdf" || kind === "cover" || kind === "email" || kind === "contacto" || kind === "compare" || kind === "add" ||
+        kind === "interview-prep" || kind === "interview-plan" || kind === "interview-debrief" || kind === "interview-redflag"
         ? { allowed: "Read,WebFetch,WebSearch,Write,Edit,Glob,Grep", disallowed: "Bash,Task,NotebookEdit" }
         : { allowed: "Read,WebFetch,WebSearch,Glob,Grep", disallowed: "Bash,Write,Edit,NotebookEdit,Task" };
   const args = isClaude
@@ -344,6 +434,39 @@ export async function POST(req: Request) {
       return 0;
     }
   };
+  // Interview kinds write into interview-prep/ under names their own modes
+  // define, so the gate is "did a file appear or grow", not "is this exact path
+  // present". Recursive: some modes write into interview-prep/sessions/.
+  const isInterviewKind = ["interview-prep","interview-plan","interview-debrief","interview-redflag"].includes(kind);
+  const prepDir = path.join(careerOpsRoot(), "interview-prep");
+  const snapshotPrep = (): string => {
+    const walk = (dir: string): string[] => {
+      let out: string[] = [];
+      let entries: fs.Dirent[];
+      try {
+        entries = fs.readdirSync(dir, { withFileTypes: true });
+      } catch {
+        return out;
+      }
+      for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) out = out.concat(walk(full));
+        else if (e.name.endsWith(".md")) {
+          let size = 0;
+          try {
+            size = fs.statSync(full).size;
+          } catch {
+            /* vanished mid-walk */
+          }
+          out.push(`${full}:${size}`);
+        }
+      }
+      return out;
+    };
+    return walk(prepDir).join("|");
+  };
+  const prepBefore = isInterviewKind ? snapshotPrep() : "";
+
   const persists = kind === "evaluate";
   const reportsBefore = persists ? countReports() : 0;
   // Tracker-mutating runs hold a write token so a row delete can't race their merge
@@ -666,6 +789,25 @@ export async function POST(req: Request) {
             // closes the stream itself in every branch.
             void previewAdd(addPayload!, addToken!);
             return;
+          }
+          return close();
+        }
+
+        if (isInterviewKind) {
+          const baseErr = noOutputError();
+          // Compares names AND sizes, so appending to an existing prep file (a
+          // debrief adding to story-bank.md) counts as having produced something.
+          const changed = snapshotPrep() !== prepBefore;
+          if (baseErr) {
+            send({ type: "error", msg: baseErr });
+          } else if (!changed || !cleanExit || sawError) {
+            send({
+              type: "error",
+              msg: "This run didn't write anything into interview-prep/ — re-run it to verify.",
+            });
+          } else {
+            send({ type: "text", text: `\n📁 Saved into interview-prep/\n` });
+            send({ type: "done", tokens: lastTokens, costUsd: lastCostUsd });
           }
           return close();
         }
