@@ -31,11 +31,24 @@ endpoints.
 
 ## Setup
 
-### 1. Create a private repo and push
+### 1. Create a PRIVATE repo and push
 
 ```bash
-git init && git add -A && git commit -m "initial scanner"
-gh repo create jobsmith --private --source=. --push
+gh repo create jobsmith-mine --private --source=. --push
+```
+
+### 1b. Opt your config into git
+
+`portals.yml` and the scan ledger are gitignored by default — that default keeps a
+user's job search out of git, and keeps a fresh clone asking new users to
+customise the scanner rather than silently handing them a generic company list.
+
+A CI instance needs them tracked, so opt in explicitly, in your PRIVATE fork only:
+
+```bash
+git add -f portals.yml data/scan-history.tsv
+git commit -m "my scanner config"
+git push
 ```
 
 If you do not use `gh`, create the private repo on github.com and push to it.
