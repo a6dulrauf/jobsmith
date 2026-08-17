@@ -67,6 +67,34 @@ function Empty({ children }: { children: React.ReactNode }) {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+// Renders one value from a script payload without ever crashing the page.
+//
+// This exists because of a real failure: the salary-gap renderer interpolated
+// `advertised` directly, assuming a string. It is an object
+// ({value, source, date, currency, raw}), and React threw "Objects are not valid
+// as a React child" — taking the whole /insights page to a 500. It only surfaced
+// once the sandbox had salary data, because an empty array never renders.
+//
+// Several renderers below still have list paths that no available fixture
+// exercises (vendor breakdowns, velocity items, friction signals). Their shapes
+// are therefore unverified, so every uncertain cell goes through here: a
+// primitive renders as itself, an object degrades to its most human field, and
+// anything else becomes a dash instead of an exception.
+function cell(v: any, fallback = "—"): string {
+  if (v === null || v === undefined) return fallback;
+  if (typeof v === "string") return v || fallback;
+  if (typeof v === "number") return Number.isFinite(v) ? String(v) : fallback;
+  if (typeof v === "boolean") return v ? "yes" : "no";
+  if (Array.isArray(v)) return v.length ? v.map((x) => cell(x, "")).filter(Boolean).join(", ") : fallback;
+  if (typeof v === "object") {
+    for (const k of ["raw", "label", "name", "company", "value", "amount"]) {
+      if (v[k] !== undefined && typeof v[k] !== "object") return cell(v[k], fallback);
+    }
+    return fallback;
+  }
+  return fallback;
+}
+
 function Stats({ d }: { d: any }) {
   const t = d.tracker ?? {};
   const f = d.funnel ?? {};
@@ -151,8 +179,10 @@ function Velocity({ d }: { d: any }) {
         <ul className="mt-3 divide-y rounded-lg border">
           {items.slice(0, 8).map((it, i) => (
             <li key={i} className="flex items-center justify-between gap-4 p-3 text-sm">
-              <span className="truncate">{it.company ?? it.role ?? "—"}</span>
-              <span className="shrink-0 tabular-nums text-muted-foreground">{it.daysWaiting ?? it.days ?? "—"}d</span>
+              <span className="truncate">{cell(it.company ?? it.role)}</span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">
+                {cell(it.daysWaiting ?? it.days)}d
+              </span>
             </li>
           ))}
         </ul>
@@ -172,16 +202,41 @@ function SalaryGap({ d }: { d: any }) {
       </Empty>
     );
   }
+  // desired/advertised/actual are OBJECTS ({value, source, date, currency, raw}),
+  // not strings. `raw` is the figure as the source actually stated it — showing
+  // that rather than the parsed midpoint avoids implying a precision the posting
+  // never had ("£90-100k GBP" is honest; "95000" is not).
+  const figure = (f: any): string | null => {
+    if (!f) return null;
+    if (typeof f === "string" || typeof f === "number") return String(f);
+    if (f.raw) return String(f.raw);
+    if (typeof f.value === "number") return `${f.currency ? `${f.currency} ` : ""}${f.value.toLocaleString()}`;
+    return null;
+  };
+
   return (
     <ul className="divide-y rounded-lg border">
-      {apps.slice(0, 10).map((a, i) => (
-        <li key={i} className="flex items-center justify-between gap-4 p-3 text-sm">
-          <span className="truncate">
-            {a.company} <span className="text-muted-foreground">· {a.role}</span>
-          </span>
-          <span className="shrink-0 tabular-nums text-muted-foreground">{a.advertised ?? a.actual ?? "—"}</span>
-        </li>
-      ))}
+      {apps.slice(0, 10).map((a, i) => {
+        const advertised = figure(a.advertised);
+        const actual = figure(a.actual);
+        const desired = figure(a.desired);
+        return (
+          <li key={i} className="p-3">
+            <p className="truncate text-sm">
+              <span className="font-medium">{a.company}</span>
+              <span className="text-muted-foreground"> · {a.role}</span>
+            </p>
+            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+              <span>desired: {desired ?? "not set"}</span>
+              <span>advertised: {advertised ?? "—"}</span>
+              <span>actual: {actual ?? "—"}</span>
+              {typeof a.advToActPct === "number" && (
+                <span className="tabular-nums">gap: {a.advToActPct}%</span>
+              )}
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -200,9 +255,9 @@ function ProcessQuality({ d }: { d: any }) {
     <ul className="divide-y rounded-lg border">
       {signals.slice(0, 10).map((s, i) => (
         <li key={i} className="flex items-center justify-between gap-4 p-3 text-sm">
-          <span className="truncate font-medium">{s.company}</span>
+          <span className="truncate font-medium">{cell(s.company)}</span>
           <span className="shrink-0 tabular-nums text-muted-foreground">
-            {s.frictionRate ?? s.rate ?? s.count ?? "—"}
+            {cell(s.frictionRate ?? s.rate ?? s.count)}
           </span>
         </li>
       ))}
@@ -248,9 +303,10 @@ function Patterns({ d }: { d: any }) {
         <ul className="mt-2 divide-y rounded-lg border">
           {vendors.map((b, i) => (
             <li key={i} className="flex items-center justify-between gap-4 p-3 text-sm">
-              <span className="capitalize">{b.vendor ?? b.name}</span>
+              <span className="capitalize">{cell(b.vendor ?? b.name)}</span>
               <span className="tabular-nums text-muted-foreground">
-                {b.advanceRate ?? b.rate}% <span className="text-xs">({b.advanced ?? 0}/{b.total ?? 0})</span>
+                {cell(b.advanceRate ?? b.rate, "?")}%{" "}
+                <span className="text-xs">({cell(b.advanced, "0")}/{cell(b.total, "0")})</span>
               </span>
             </li>
           ))}
@@ -279,8 +335,8 @@ function Patterns({ d }: { d: any }) {
           <ul className="mt-2 space-y-2">
             {recs.slice(0, 5).map((r, i) => (
               <li key={i} className="rounded-lg border p-3">
-                <p className="text-sm font-medium">{r.action}</p>
-                {r.reasoning && <p className="mt-0.5 text-sm text-muted-foreground">{r.reasoning}</p>}
+                <p className="text-sm font-medium">{cell(r.action)}</p>
+                {r.reasoning && <p className="mt-0.5 text-sm text-muted-foreground">{cell(r.reasoning)}</p>}
               </li>
             ))}
           </ul>
@@ -311,7 +367,7 @@ function Upskill({ d }: { d: any }) {
         {gaps.slice(0, 12).map((g, i) => (
           <li key={i} className="flex items-center justify-between gap-4 p-3">
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{g.skill}</p>
+              <p className="truncate text-sm font-medium">{cell(g.skill)}</p>
               <p className="text-xs text-muted-foreground">
                 {g.reports} report{g.reports === 1 ? "" : "s"}
                 {g.lowFitReports ? ` · ${g.lowFitReports} below the apply line` : ""}
