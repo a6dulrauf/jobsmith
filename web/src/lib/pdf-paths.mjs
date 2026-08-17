@@ -59,6 +59,29 @@ export function resolvePdfPaths(input, today, root, findReportFile) {
   if (!reportFile) {
     return { ok: false, error: `No report #${input} found — evaluate this posting first.` };
   }
+  const { companySlug, candidateSlug, scratchDir } = resolveSlugs(reportFile, root, "resolvePdfPaths");
+  return {
+    ok: true,
+    paths: {
+      html: path.join(scratchDir, `cv-web-${input}.html`),
+      meta: path.join(scratchDir, `cv-web-${input}.meta.json`),
+      finalPdf: path.join(root, "output", `cv-${candidateSlug}-${companySlug}-${today}.pdf`),
+    },
+  };
+}
+
+/**
+ * Shared by every document kind: derive the company slug from the report
+ * filename, the candidate slug from profile.yml, and ensure the scratch dir
+ * exists. Extracted when cover letters and application emails joined CVs —
+ * three copies of this would drift, and the filename convention is exactly
+ * what keeps web and CLI output interchangeable.
+ *
+ * @param {string} reportFile - Absolute path to the resolved report.
+ * @param {string} root - careerOpsRoot().
+ * @param {string} caller - Name used in the warning message.
+ */
+function resolveSlugs(reportFile, root, caller) {
   const companyMatch = path.basename(reportFile).match(/^\d+-(.+)-\d{4}-\d{2}-\d{2}\.md$/);
   const companySlug = companyMatch ? companyMatch[1] : "company";
   let candidateSlug = "candidate";
@@ -74,17 +97,67 @@ export function resolvePdfPaths(input, today, root, findReportFile) {
     // user's own file — should not fail silently forever; it would otherwise
     // produce a wrong-but-plausible-looking filename with zero signal.
     if (err?.code !== "ENOENT") {
-      console.warn(`resolvePdfPaths: could not read/parse config/profile.yml, defaulting candidate slug: ${err.message}`);
+      console.warn(`${caller}: could not read/parse config/profile.yml, defaulting candidate slug: ${err.message}`);
     }
   }
   const scratchDir = path.join(root, ".career-ops-web", "pdf-tmp");
   fs.mkdirSync(scratchDir, { recursive: true });
+  return { companySlug, candidateSlug, scratchDir };
+}
+
+/**
+ * Guard shared by every resolver: only a bare report number may reach path
+ * construction. findReportFile()'s parseInt matching would happily resolve
+ * "1/../../etc/passwd" to a real report, but the raw string is also
+ * interpolated into filenames below, where path.join would honor those
+ * segments and escape the scratch directory.
+ */
+function resolveReport(input, root, findReportFile) {
+  if (!/^\d+$/.test(input)) return { ok: false, error: `Invalid report selector: "${input}"` };
+  const reportFile = findReportFile(input);
+  if (!reportFile) return { ok: false, error: `No report #${input} found — evaluate this posting first.` };
+  return { ok: true, reportFile };
+}
+
+/**
+ * Scratch payload + final PDF paths for a "cover" run.
+ *
+ * Mirrors the pdf split deliberately: the agent writes only the JSON payload
+ * that modes/cover.md specifies, and the backend renders it with
+ * generate-cover-letter.mjs. Rendering launches a real browser, which an agent
+ * CLI's sandbox may block with no human present to approve the escalation.
+ *
+ * @returns {{ok: true, paths: {payload: string, finalPdf: string}} | {ok: false, error: string}}
+ */
+export function resolveCoverPaths(input, today, root, findReportFile) {
+  const resolved = resolveReport(input, root, findReportFile);
+  if (!resolved.ok) return resolved;
+  const { companySlug, candidateSlug, scratchDir } = resolveSlugs(resolved.reportFile, root, "resolveCoverPaths");
   return {
     ok: true,
     paths: {
-      html: path.join(scratchDir, `cv-web-${input}.html`),
-      meta: path.join(scratchDir, `cv-web-${input}.meta.json`),
-      finalPdf: path.join(root, "output", `cv-${candidateSlug}-${companySlug}-${today}.pdf`),
+      payload: path.join(scratchDir, `cover-web-${input}.json`),
+      finalPdf: path.join(root, "output", `cover-letter-${candidateSlug}-${companySlug}-${today}.pdf`),
     },
+  };
+}
+
+/**
+ * Final draft path for an "email" run.
+ *
+ * No scratch/render split: an application email is text, so the agent writes
+ * the finished markdown draft straight to output/, where the Documents page
+ * picks it up. It is a DRAFT — career-ops never sends anything.
+ *
+ * @returns {{ok: true, paths: {draft: string}} | {ok: false, error: string}}
+ */
+export function resolveEmailPaths(input, today, root, findReportFile) {
+  const resolved = resolveReport(input, root, findReportFile);
+  if (!resolved.ok) return resolved;
+  const { companySlug } = resolveSlugs(resolved.reportFile, root, "resolveEmailPaths");
+  fs.mkdirSync(path.join(root, "output"), { recursive: true });
+  return {
+    ok: true,
+    paths: { draft: path.join(root, "output", `email-${companySlug}-${today}.md`) },
   };
 }
