@@ -10,6 +10,7 @@ import { CompanyLogo } from "@/components/company-logo";
 import { ScoreMethodology } from "@/components/score-methodology";
 import { GeneratePdfButton } from "@/components/generate-pdf-button";
 import { GenerateDocButtons } from "@/components/generate-doc-buttons";
+import { RecordOutcome } from "@/components/record-outcome";
 import { ApplyButton } from "@/components/apply-button";
 import { DeleteFromTracker } from "@/components/delete-from-tracker";
 
@@ -127,6 +128,14 @@ export function ReportView({
           <GenerateDocButtons n={id} company={app?.company ?? meta?.title ?? id} />
           <ApplyButton n={id} url={url && url.startsWith("http") ? url : undefined} company={app?.company ?? meta?.title ?? id} pdfReady={(app?.pdf ?? "").includes("✅")} />
         </div>
+
+        {/* Recording what happened is what makes /insights meaningful later, so
+            it sits on the report page rather than somewhere you would forget. */}
+        {app && (
+          <div className="mt-3">
+            <RecordOutcome n={id} company={app.company} />
+          </div>
+        )}
 
         {app && canDelete && (
           <div className="mt-3">
