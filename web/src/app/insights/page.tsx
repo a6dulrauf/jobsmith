@@ -210,6 +210,132 @@ function ProcessQuality({ d }: { d: any }) {
   );
 }
 
+function Patterns({ d }: { d: any }) {
+  const f = d.funnel ?? {};
+  const v = d.vendorAnalysis ?? {};
+  const via = d.viaChannelAnalysis ?? {};
+  const th = d.scoreThreshold ?? {};
+  const recs: any[] = Array.isArray(d.recommendations) ? d.recommendations : [];
+  const vendors: any[] = Array.isArray(v.breakdown) ? v.breakdown : [];
+  // The script publishes its own minimum sample for a claim. Respect it: a
+  // 100% advance rate off one application is noise, and presenting it as a
+  // finding would be worse than showing nothing.
+  const vendorClaimable = (v.submitted ?? 0) >= (v.minSampleForClaim ?? 8) && vendors.length > 0;
+  const viaClaimable = (via.agencySubmitted ?? 0) + (via.directSubmitted ?? 0) >= (via.minSampleForClaim ?? 8);
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Applied" value={f.applied ?? 0} />
+        <Stat label="Interview" value={f.interview ?? 0} />
+        <Stat label="Rejected" value={f.rejected ?? 0} />
+        <Stat label="Self-filtered" value={f.skip ?? 0} />
+      </div>
+
+      {th.recommended != null && (
+        <div className="mt-3 rounded-lg border p-4">
+          <p className="text-sm">
+            <span className="font-medium">Suggested score floor: {th.recommended}/5</span>
+            {th.positiveRange && (
+              <span className="text-muted-foreground"> · positives ranged {th.positiveRange}</span>
+            )}
+          </p>
+          {th.reasoning && <p className="mt-1 text-sm text-muted-foreground">{th.reasoning}</p>}
+        </div>
+      )}
+
+      <h3 className="mt-5 text-sm font-medium">Advance rate by ATS vendor</h3>
+      {vendorClaimable ? (
+        <ul className="mt-2 divide-y rounded-lg border">
+          {vendors.map((b, i) => (
+            <li key={i} className="flex items-center justify-between gap-4 p-3 text-sm">
+              <span className="capitalize">{b.vendor ?? b.name}</span>
+              <span className="tabular-nums text-muted-foreground">
+                {b.advanceRate ?? b.rate}% <span className="text-xs">({b.advanced ?? 0}/{b.total ?? 0})</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <Empty>
+          Needs {v.minSampleForClaim ?? 8} identified submissions before a per-vendor rate means
+          anything — {v.submitted ?? 0} submitted, {v.identified ?? 0} with a known vendor. The
+          script withholds the number rather than publish noise.
+        </Empty>
+      )}
+
+      {viaClaimable && (
+        <>
+          <h3 className="mt-5 text-sm font-medium">Direct vs agency</h3>
+          <div className="mt-2 grid grid-cols-2 gap-3">
+            <Stat label="Direct" value={`${via.directAdvanceRate ?? 0}%`} hint={`${via.directSubmitted ?? 0} sent`} />
+            <Stat label="Via agency" value={`${via.agencyAdvanceRate ?? 0}%`} hint={`${via.agencySubmitted ?? 0} sent`} />
+          </div>
+        </>
+      )}
+
+      {recs.length > 0 && (
+        <>
+          <h3 className="mt-5 text-sm font-medium">What the data suggests</h3>
+          <ul className="mt-2 space-y-2">
+            {recs.slice(0, 5).map((r, i) => (
+              <li key={i} className="rounded-lg border p-3">
+                <p className="text-sm font-medium">{r.action}</p>
+                {r.reasoning && <p className="mt-0.5 text-sm text-muted-foreground">{r.reasoning}</p>}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </>
+  );
+}
+
+const TIER_STYLE: Record<string, string> = {
+  High: "bg-red-500/10 text-red-600 dark:text-red-400",
+  Medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  Low: "bg-muted text-muted-foreground",
+};
+
+function Upskill({ d }: { d: any }) {
+  const gaps: any[] = Array.isArray(d.gaps) ? d.gaps : [];
+  const m = d.metadata ?? {};
+  if (gaps.length === 0) return <Empty>No recurring skill gaps found across your scored reports.</Empty>;
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Stat label="Reports analysed" value={m.reportsScored ?? 0} />
+        <Stat label="Low-fit reports" value={m.lowFitReports ?? 0} hint={`below ${m.lowFitScoreThreshold ?? 4}/5`} />
+        <Stat label="Gaps found" value={gaps.length} />
+      </div>
+      <ul className="mt-3 divide-y rounded-lg border">
+        {gaps.slice(0, 12).map((g, i) => (
+          <li key={i} className="flex items-center justify-between gap-4 p-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{g.skill}</p>
+              <p className="text-xs text-muted-foreground">
+                {g.reports} report{g.reports === 1 ? "" : "s"}
+                {g.lowFitReports ? ` · ${g.lowFitReports} below the apply line` : ""}
+              </p>
+            </div>
+            {g.tier && (
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${TIER_STYLE[g.tier] ?? TIER_STYLE.Low}`}
+              >
+                {g.tier}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Weighted so gaps from low-scoring roles count more — a 3.1/5 report says more about what
+        you are missing than a 4.5/5 one does. Skills already on your CV are excluded
+        {typeof m.knownSkillCount === "number" ? ` (${m.knownSkillCount} recognised)` : ""}.
+      </p>
+    </>
+  );
+}
+
 /** Last-resort renderer: a shape this page has no bespoke view for yet. Shows
  *  the real payload rather than pretending there is nothing to see. */
 function RawJson({ d }: { d: any }) {
@@ -228,6 +354,10 @@ function Body({ r }: { r: Result }) {
   switch (r.id) {
     case "stats":
       return <Stats d={d} />;
+    case "patterns":
+      return <Patterns d={d} />;
+    case "upskill":
+      return <Upskill d={d} />;
     case "reposts":
       return <Reposts d={d} />;
     case "velocity":
