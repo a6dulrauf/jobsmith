@@ -88,6 +88,7 @@ export const REEXEC_BUFFER_TIMEOUT_MS = parsePositiveInt(process.env.CAREER_OPS_
 // System layer paths — ONLY these files get updated
 const SYSTEM_PATHS = [
   'NOTICE',
+  'fix-skills.mjs',
   'scanner/README.md',
   'make-sandbox.mjs',
   'scanner/run-scan.mjs',

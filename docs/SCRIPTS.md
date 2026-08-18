@@ -21,9 +21,14 @@ All scripts live in the project root as `.mjs` modules. Most are exposed via
 | `npm run patterns` | `analyze-patterns.mjs` | Analyze tracker outcomes and report patterns |
 | `npm run upskill` | `upskill.mjs` | Aggregate skill-gap map from tracked reports (or `--url-text <url\|file>` for a single-JD targeted gap analysis) |
 | `npm run add` | `add-entry.mjs` | Dedup + insert a `/career-ops add` entry into cv.md / article-digest.md |
-| `npm run update:check` | `update-system.mjs check` | Check for upstream updates |
-| `npm run update` | `update-system.mjs apply` | Apply upstream update |
-| `npm run rollback` | `update-system.mjs rollback` | Rollback last update |
+| `node fix-skills.mjs` | `fix-skills.mjs` | Repair per-CLI skill entrypoints (needed on Windows) |
+| `npm run sandbox` | `make-sandbox.mjs` | Build a disposable install with a fictional persona |
+| `npm run scan:daily` | `scanner/run-scan.mjs` | Scan and email new postings (used by CI) |
+
+> This fork has no `update`, `update:check` or `rollback` scripts. It is a hard
+> fork of career-ops, and the upstream updater would overwrite its README,
+> package.json, AGENTS.md and LICENSE. See `modes/update.md` for how to take an
+> upstream change deliberately.
 | `npm run liveness` | `check-liveness.mjs` | Test if job URLs are still active |
 | `npm run extract` | `browser-extract.mjs` | Headless read-only page extractor (opt-in `scan.extractor: cli`) — compact JSON for scan/JD |
 | `npm run scan` | `scan.mjs` | Zero-token portal scanner |
@@ -412,48 +417,49 @@ node check-table-freshness.mjs --self-test
 
 ---
 
-## update:check
+## update:check · update · rollback — REMOVED in this fork
 
-Checks whether a newer version of career-ops is available upstream. Outputs JSON to stdout:
+These three no longer exist. Jobsmith is a hard fork of career-ops, and the
+upstream updater pulls files over a `SYSTEM_PATHS` allowlist that includes
+`README.md`, `package.json`, `AGENTS.md`, `CLAUDE.md` and `LICENSE` — every file
+carrying this fork's identity. Running it would silently restore career-ops's
+branding and undo the fork, so `update-system.mjs` refuses to run and exits 1
+with an explanation.
+
+Take an upstream change deliberately instead:
 
 ```bash
-npm run update:check
+git remote add upstream https://github.com/santifer/career-ops.git   # once
+git fetch upstream
+git log upstream/main --oneline    # review
+git cherry-pick <sha>
+node test-all.mjs && (cd web && npm test)
 ```
 
-Possible JSON responses:
+Rollback is ordinary git (`git revert <sha>`). Full guidance in `modes/update.md`.
 
-| `status` | Meaning |
-|----------|---------|
-| `up-to-date` | Local version matches remote |
-| `update-available` | Newer version exists (includes `local`, `remote`, `changelog`) |
-| `dismissed` | User dismissed the update prompt |
-| `offline` | Could not reach GitHub |
-
-**Exit codes:** `0` always.
+One capability the updater used to provide as a side effect is preserved
+separately: repairing the per-CLI skill entrypoints, which Windows checks out as
+plain pointer files. See `fix-skills.mjs` below.
 
 ---
 
-## update
+## fix-skills
 
-Applies the upstream update. Creates a timestamped backup branch (`backup-pre-update-<version>-<YYYYMMDDTHHMMSSZ>`), fetches from the canonical repo, checks out only system-layer files, runs `npm install`, and commits. The timestamp is derived from UTC ISO time with separators and milliseconds removed (for example, `backup-pre-update-1.8.1-20260608T071302Z`). User-layer files (`cv.md`, `config/profile.yml`, `data/`, etc.) are never touched.
-
-```bash
-npm run update
-```
-
-**Exit codes:** `0` success, `1` lock conflict or safety violation.
-
----
-
-## rollback
-
-Restores system-layer files from the most recent backup branch created during an update. Rollback prefers the newest timestamped branch matching `backup-pre-update-<version>-<YYYYMMDDTHHMMSSZ>` and still accepts legacy `backup-pre-update-<version>` branches for older installs.
+Repairs `.{cli}/skills/career-ops/SKILL.md` entrypoints. Each ships as a symlink
+to the canonical `.agents/skills/career-ops/SKILL.md`; Windows checks those out
+as short pointer files containing a path, and the CLI then loads nothing.
 
 ```bash
-npm run rollback
+node fix-skills.mjs           # repair every broken entrypoint
+node fix-skills.mjs --check   # report only, change nothing
 ```
 
-**Exit codes:** `0` success, `1` no backup branch found or git error.
+Calls the same `ensureSkillEntrypoints()` upstream's updater used, so the repair
+is identical. Prints the state of all seven entrypoints either way.
+
+**Exit codes:** `0` all healthy or repaired, `1` `--check` found problems, or a
+repair failed.
 
 ---
 
