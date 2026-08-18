@@ -60,7 +60,8 @@
     "scan:daily": "node scanner/run-scan.mjs",
     "scan:daily:dry": "node scanner/run-scan.mjs --dry-run",
     "sandbox": "node make-sandbox.mjs",
-    "test:digest": "node scanner/digest.mjs --self-test"
+    "test:digest": "node scanner/digest.mjs --self-test",
+    "fix-skills": "node fix-skills.mjs"
   },
   "keywords": [
     "job-search",

@@ -6,7 +6,16 @@ Common questions from the community, answered in one place. For setup details se
 
 ## 1. Skills aren't loading on Windows — symlink error on install
 
-Windows does not create symlinks by default, so Git checks out the CLI skill entrypoints (`.claude/skills/`, `.opencode/skills/`, etc.) as plain pointer files instead of real symlinks. The installer and updater both detect this automatically: run `node update-system.mjs apply` (or `npx @santifer/career-ops init` on a fresh install) and the `materializeSkillEntrypoints` step will replace the pointer files with the full canonical skill content. No manual `mklink` or Developer Mode changes are needed.
+Windows does not create symlinks by default, so Git checks out the CLI skill entrypoints (`.claude/skills/`, `.opencode/skills/`, etc.) as plain pointer files containing a path instead of the skill itself — and the CLI then loads nothing. Repair them with:
+
+```bash
+node fix-skills.mjs           # repair
+node fix-skills.mjs --check   # report only
+```
+
+That replaces every pointer file with the full canonical skill content. No manual `mklink` or Developer Mode changes are needed.
+
+> Upstream career-ops fixed this as a side effect of `node update-system.mjs apply`. This fork disables that updater (it would overwrite the fork's own README, package.json and LICENSE), so the same repair is exposed directly as `fix-skills.mjs`.
 
 ## 2. What is the difference between `scan` and `scan:full`?
 
