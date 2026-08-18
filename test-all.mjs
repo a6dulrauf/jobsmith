@@ -1227,6 +1227,11 @@ const leakPatterns = [
 
 const scanExtensions = ['md', 'yml', 'html', 'mjs', 'sh', 'go', 'json'];
 const allowedFiles = [
+  // Fork attribution: the preserved upstream README and the NOTICE both credit
+  // Santiago by name and link santifer.io deliberately. That is the MIT
+  // attribution this fork owes, not leaked personal data — which is what the
+  // rest of this check is for.
+  'docs/README.career-ops-original.md', 'NOTICE',
   // English README + localized translations (all legitimately credit Santiago)
   'README.md', 'README.ar.md', 'README.da.md', 'README.de.md', 'README.es.md', 'README.fr.md', 'README.hi.md',
   'README.ja.md', 'README.ko-KR.md', 'README.pl.md', 'README.pt-BR.md', 'README.ru.md', 'README.ta.md', 'README.cn.md',
