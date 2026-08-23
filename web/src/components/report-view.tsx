@@ -9,7 +9,7 @@ import { StatusSelect } from "@/components/status-select";
 import { CompanyLogo } from "@/components/company-logo";
 import { ScoreMethodology } from "@/components/score-methodology";
 import { GeneratePdfButton } from "@/components/generate-pdf-button";
-import { GenerateDocButtons } from "@/components/generate-doc-buttons";
+import { GenerateDocButtons, type ExistingDocs } from "@/components/generate-doc-buttons";
 import { RecordOutcome } from "@/components/record-outcome";
 import { ApplyButton } from "@/components/apply-button";
 import { DeleteFromTracker } from "@/components/delete-from-tracker";
@@ -78,10 +78,15 @@ export function ReportView({
   app,
   report,
   canDelete = false,
+  existingDocs,
 }: {
   id: string;
   app: Application | null;
   report: string | null;
+  /** Documents already on disk for this offer, resolved server-side. Without
+   *  this the buttons only knew about runs from THIS browser's localStorage,
+   *  and offered to regenerate files the user already had. */
+  existingDocs?: ExistingDocs;
   /** kept in the props contract (the page passes it) but no longer surfaced —
    *  the raw .md filename is a dev artifact, not header content. */
   file?: string | null;
@@ -125,7 +130,7 @@ export function ReportView({
           {meta?.legitimacy && <Badge tone={legitimacyTone(meta.legitimacy)}>{meta.legitimacy}</Badge>}
           {app && <StatusSelect n={id} current={app.status} />}
           <GeneratePdfButton n={id} company={app?.company ?? meta?.title ?? id} pdfReady={(app?.pdf ?? "").includes("✅")} />
-          <GenerateDocButtons n={id} company={app?.company ?? meta?.title ?? id} />
+          <GenerateDocButtons n={id} company={app?.company ?? meta?.title ?? id} existing={existingDocs} />
           <ApplyButton n={id} url={url && url.startsWith("http") ? url : undefined} company={app?.company ?? meta?.title ?? id} pdfReady={(app?.pdf ?? "").includes("✅")} />
         </div>
 

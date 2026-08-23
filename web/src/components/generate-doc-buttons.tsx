@@ -40,7 +40,7 @@ const SPEC: Record<Kind, { label: string; busy: string; title: string; sub: stri
   },
 };
 
-function DocButton({ kind, n, company }: { kind: Kind; n: string; company: string }) {
+function DocButton({ kind, n, company, existing }: { kind: Kind; n: string; company: string; existing?: string | null }) {
   const { jobs, startJob } = useJobs();
   const spec = SPEC[kind];
   const job = useMemo(
@@ -61,13 +61,20 @@ function DocButton({ kind, n, company }: { kind: Kind; n: string; company: strin
       </Link>
     );
 
-  // Done: point at Documents rather than guessing the filename here. The
-  // backend owns naming, so the index is the honest place to find the artifact.
-  if (job?.status === "done")
+  // "Already generated" is a fact about the DISK, not about this browser. The
+  // job history lives in localStorage, so relying on it alone hid documents
+  // that were sitting in output/ — cleared storage, a different browser, or a
+  // run that errored after the file had already been written. `existing` is
+  // resolved server-side by findGeneratedDocs(); the job is only a faster path
+  // to the same answer for a run that just finished in this tab.
+  const href = existing ? `/api/documents/${existing}` : "/documents";
+  if (job?.status === "done" || existing)
     return (
       <span className="inline-flex items-center gap-1">
         <Link
-          href="/documents"
+          href={href}
+          target={existing ? "_blank" : undefined}
+          rel={existing ? "noreferrer" : undefined}
           className="inline-flex items-center justify-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-500/15 dark:text-emerald-400 max-sm:min-h-[44px]"
         >
           <spec.Icon className="size-3.5" /> View {spec.label.toLowerCase()}
@@ -95,12 +102,14 @@ function DocButton({ kind, n, company }: { kind: Kind; n: string; company: strin
   );
 }
 
-export function GenerateDocButtons({ n, company }: { n: string; company: string }) {
+export type ExistingDocs = { cover?: string | null; email?: string | null; contacto?: string | null };
+
+export function GenerateDocButtons({ n, company, existing }: { n: string; company: string; existing?: ExistingDocs }) {
   return (
     <>
-      <DocButton kind="cover" n={n} company={company} />
-      <DocButton kind="email" n={n} company={company} />
-      <DocButton kind="contacto" n={n} company={company} />
+      <DocButton kind="cover" n={n} company={company} existing={existing?.cover} />
+      <DocButton kind="email" n={n} company={company} existing={existing?.email} />
+      <DocButton kind="contacto" n={n} company={company} existing={existing?.contacto} />
     </>
   );
 }
