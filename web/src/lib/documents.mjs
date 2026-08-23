@@ -20,6 +20,13 @@ import path from "node:path";
 /** Only these directories are ever readable through the documents route. */
 export const ALLOWED_DIRS = ["output", "reports"];
 
+/** Reservation sentinels written by reserve-report-num.mjs to hold a report
+ *  number while a worker runs. They are .md files in reports/, but they are
+ *  bookkeeping, not documents — a 100-byte JSON stub listed as an "evaluation
+ *  report" is noise at best and looks like a broken report at worst. A crashed
+ *  worker leaves one behind until the 4h GC, so this is not a rare case. */
+const RESERVED_SENTINEL_RE = /^\d+-RESERVED\.md$/;
+
 /** Only these extensions are ever served. Keeps .env, .yml, .tsv and anything
  *  else that might land in an output directory out of reach even if the
  *  directory allowlist were somehow satisfied. */
@@ -110,6 +117,7 @@ export function listDocuments(root) {
     }
     for (const e of entries) {
       if (!e.isFile() && !e.isSymbolicLink()) continue;
+      if (RESERVED_SENTINEL_RE.test(e.name)) continue; // bookkeeping, not a document
       const ext = path.extname(e.name).toLowerCase();
       const kind = ALLOWED_EXT.get(ext);
       if (!kind) continue;

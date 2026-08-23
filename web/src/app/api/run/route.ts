@@ -474,9 +474,15 @@ export async function POST(req: Request) {
   // For write-needing kinds, snapshot reports/ so we can verify the worker
   // actually persisted (non-Claude CLIs lack Write auth and silently no-op).
   const reportsDir = path.join(careerOpsRoot(), "reports");
+  const RESERVED_SENTINEL_RE = /^\d+-RESERVED\.md$/;
   const countReports = () => {
     try {
-      return fs.readdirSync(reportsDir).filter((f) => f.endsWith(".md")).length;
+      // Reservation sentinels (NNN-RESERVED.md, written by reserve-report-num.mjs
+      // before the agent writes anything) are .md files in reports/ — counting
+      // them would let "the agent reserved a number" masquerade as "the agent
+      // wrote a report", which is exactly the confident-but-empty result the
+      // honesty gate below exists to prevent.
+      return fs.readdirSync(reportsDir).filter((f) => f.endsWith(".md") && !RESERVED_SENTINEL_RE.test(f)).length;
     } catch {
       return 0;
     }
@@ -598,7 +604,20 @@ export async function POST(req: Request) {
       //
       // 'email' shares the reading load but has no render phase, so it gets the
       // same agent budget with the render headroom simply going unused.
-      const killMs = kind === "evaluate" || kind === "fix-portal" || kind === "research" ? 285_000 : 600_000;
+      //
+      // 'evaluate' and 'research' were the last two kinds left on the old 285s
+      // budget, and it was never right for them. 285s is 300s-minus-headroom —
+      // sized for a serverless platform cutoff this route does not run under
+      // (maxDuration is 800s, and locally there is no cutoff at all). Meanwhile
+      // an evaluation is the HEAVIEST agent phase in the app: it reads the mode
+      // files, cv.md and the profile, WebFetches the posting to prove the job is
+      // still live, runs company/legitimacy web searches for Block G, and only
+      // then writes a full A–G report. Measured: a real scoring run reached its
+      // Write call and was SIGTERMed at 285s, leaving a reserved report number
+      // and no report — the failure this widening fixes. Unlike 'pdf'/'cover'
+      // there is no post-agent render to reserve headroom for, so the full 600s
+      // is the agent's, and 200s still separates it from maxDuration.
+      const killMs = kind === "fix-portal" ? 285_000 : 600_000;
       killer = setTimeout(() => {
         try { child.kill("SIGTERM"); } catch { /* ignore */ }
       }, killMs);

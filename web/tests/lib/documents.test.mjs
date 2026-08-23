@@ -78,6 +78,25 @@ test("listDocuments: missing directories yield an empty list, not a throw", () =
   }
 });
 
+test("listDocuments: never lists report-number reservation sentinels", () => {
+  const root = makeRoot();
+  try {
+    // What reserve-report-num.mjs writes to hold a number while a worker runs.
+    writeFileSync(
+      join(root, "reports", "002-RESERVED.md"),
+      JSON.stringify({ pid: 123, token: "abc", created_at: "2026-08-23T17:00:57.416Z" }),
+    );
+    const rels = listDocuments(root).map((d) => d.rel);
+    assert.ok(
+      !rels.some((r) => r.includes("RESERVED")),
+      "a reservation stub is bookkeeping, not a document — a crashed worker leaves one behind for up to 4h",
+    );
+    assert.ok(rels.includes("reports/001-acme-2026-01-02.md"), "real reports must still be listed");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // ── resolveDocument — the security boundary ──────────────────────────────────
 
 test("resolveDocument: resolves a legitimate file inside output/", () => {
