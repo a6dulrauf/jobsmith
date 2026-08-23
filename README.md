@@ -44,6 +44,16 @@ analytics refuse to compute a rate from too small a sample, and say why.
 
 ---
 
+## New here?
+
+**[docs/GUIDE.md](docs/GUIDE.md)** — what this does for you, in the order it does
+it. Screen-by-screen flow diagrams, the exact clicks for your first hour, and
+where to go after a rejection, an interview invite, an offer, or silence.
+
+Written for someone who has a CV and wants a job, and knows nothing else.
+
+---
+
 ## Quick start
 
 ```bash
