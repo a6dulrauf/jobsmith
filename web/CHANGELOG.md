@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.6.0](https://github.com/a6dulrauf/jobsmith/compare/web-v0.5.0...web-v0.6.0) (2026-08-23)
+
+
+### Features
+
+* **patterns:** per-agency advance-rate analysis from the Via channel ([9ef9b7d](https://github.com/a6dulrauf/jobsmith/commit/9ef9b7d200cb73b8f1e1d2dce8a0d42bbeff5f05))
+* **providers:** add VDAB zero-auth provider ([#2084](https://github.com/a6dulrauf/jobsmith/issues/2084)) ([c68182c](https://github.com/a6dulrauf/jobsmith/commit/c68182c9acbc46cdbb8ac083888ec49cf3f14773))
+* sandbox persona for verification + insights renderers it revealed ([a077cd0](https://github.com/a6dulrauf/jobsmith/commit/a077cd02225cc8a672b4c2d0b8481778e5a1fd86))
+* tell the candidate what to ask for, not just what the job pays ([20641c5](https://github.com/a6dulrauf/jobsmith/commit/20641c542ba8c96eee6b5b4477d908233f5c642b))
+* the salary answer, written for the box it goes in ([ea8ede5](https://github.com/a6dulrauf/jobsmith/commit/ea8ede5abc95a22ad00934451ab0c296d3656a0b))
+* **tracker:** Via channel — end employer vs recruiter/agency intermediary ([#1599](https://github.com/a6dulrauf/jobsmith/issues/1599)) ([b4f2b9c](https://github.com/a6dulrauf/jobsmith/commit/b4f2b9c7c452c57bd006d273a4ab0bf86d137373))
+* **web:** a guided next-step card on the home page ([8c3be19](https://github.com/a6dulrauf/jobsmith/commit/8c3be1951a4596a22c376cbbf0f815a294d2444e))
+* **web:** cover letter + application email from the report page ([ff92226](https://github.com/a6dulrauf/jobsmith/commit/ff92226e173038a9f3cf2b98f8dd1002f4ec6025))
+* **web:** Follow-up Tracker page with logging, history, and cadence settings ([#1422](https://github.com/a6dulrauf/jobsmith/issues/1422)) ([cb9a65b](https://github.com/a6dulrauf/jobsmith/commit/cb9a65b92b4ce6f8e46c8ef9bc8903137cdfb1ea))
+* **web:** insights page — seven analytics tools, zero model calls ([89b783f](https://github.com/a6dulrauf/jobsmith/commit/89b783fc656a8d2f4b72d85022bd01118762b6c4))
+* **web:** interview suite — research, plan, red-flags, debrief, practice ([9a2a54c](https://github.com/a6dulrauf/jobsmith/commit/9a2a54c58b76cf5eff21878135add23472b8b990))
+* **web:** offer prep — contract clause walk with the PII guard in code ([ec74ffe](https://github.com/a6dulrauf/jobsmith/commit/ec74ffe773348a90611ac8dc34a7e8fe97d414bc))
+* **web:** outreach, offer comparison, and a gated add-to-CV ([db68bd7](https://github.com/a6dulrauf/jobsmith/commit/db68bd75d5b26cf9f2e0c814c02be224028161c3))
+* **web:** record outcomes + run tracker maintenance from the portal ([b7e004f](https://github.com/a6dulrauf/jobsmith/commit/b7e004f86243193fb4bde5b9ab03a6845190b6bb))
+* **web:** surface profile narrative and generated documents ([9aa3e83](https://github.com/a6dulrauf/jobsmith/commit/9aa3e8309696f91c895ccc4a37c7d883d9d731a3))
+* **web:** the portal calls itself Jobsmith ([19b6f12](https://github.com/a6dulrauf/jobsmith/commit/19b6f12615830523bc3aa7a292258996e693a56d))
+
+
+### Bug Fixes
+
+* **dashboard:** localize the hired status label and buffer split stream openers ([#2295](https://github.com/a6dulrauf/jobsmith/issues/2295)) ([fc6243f](https://github.com/a6dulrauf/jobsmith/commit/fc6243ff2abcba15c51d9b21536ef8721a2a416c))
+* **deps:** update dependency next to v16.2.11 [security] ([#2198](https://github.com/a6dulrauf/jobsmith/issues/2198)) ([b90c3de](https://github.com/a6dulrauf/jobsmith/commit/b90c3de7aedb3b50fc22c5d03551a308b0bf006e))
+* **web:** add Hired to the states.ts FALLBACK so the degraded path accepts it ([#2282](https://github.com/a6dulrauf/jobsmith/issues/2282)) ([dd34f4c](https://github.com/a6dulrauf/jobsmith/commit/dd34f4c319b84f312c87f8af8f848854593ec61c))
+* **web:** an evaluation is the heaviest agent we run, on the smallest budget ([7a7a8d0](https://github.com/a6dulrauf/jobsmith/commit/7a7a8d0ccf03fddc0d244c413950d61637e72799))
+* **web:** every action for an application in one row ([f68f9a2](https://github.com/a6dulrauf/jobsmith/commit/f68f9a24062c2d80b94cf29ab1ef780da80974d6))
+* **web:** insights renderers must not crash on object-valued fields ([b0a292a](https://github.com/a6dulrauf/jobsmith/commit/b0a292a2f51c144ce6704868eab68e6b0752d936))
+* **web:** keep the run stream alive, and give an evaluation the time it takes ([4e80ebd](https://github.com/a6dulrauf/jobsmith/commit/4e80ebd3c63cf4320c6137f18edff324f8faee63))
+* **web:** label-aware pipeline.md reader — posted:/trust:/note: never misread as columns ([a4ac194](https://github.com/a6dulrauf/jobsmith/commit/a4ac19413c00c9fda2b11033c057de4eb7c097e3))
+* **web:** make inbox triage rows link to the actual posting ([0933437](https://github.com/a6dulrauf/jobsmith/commit/093343735c0223735fdca841cb9d56d9cef8b28e))
+* **web:** propagate the Hired terminal-success state across the whole dashboard ([#2250](https://github.com/a6dulrauf/jobsmith/issues/2250)) ([c60ba69](https://github.com/a6dulrauf/jobsmith/commit/c60ba693025292b52c483513b36e217178c6a8db))
+* **web:** put the job posting back where someone about to apply would look ([c5067c0](https://github.com/a6dulrauf/jobsmith/commit/c5067c0a9e33cd4d6ff3a99796d55f77c6ef4ebd))
+* **web:** render PDFs from the backend instead of the spawned agent ([#2182](https://github.com/a6dulrauf/jobsmith/issues/2182)) ([ca4d611](https://github.com/a6dulrauf/jobsmith/commit/ca4d611111cff95b8667c304f2bf84cd51f60f53))
+* **web:** resolve nested postcss and sharp advisories via overrides ([#2216](https://github.com/a6dulrauf/jobsmith/issues/2216)) ([e000c23](https://github.com/a6dulrauf/jobsmith/commit/e000c23d51cf3fa1baba36edf2ba44af9b466df9))
+* **web:** the report page guessed which documents existed instead of looking ([7a345b3](https://github.com/a6dulrauf/jobsmith/commit/7a345b3b3f06fedbd4751931fe060de8c789769b))
+* **web:** ux-audit cleanup — CostBadge global CSS + last sub-44 stragglers ([#1648](https://github.com/a6dulrauf/jobsmith/issues/1648)) ([ec4fda4](https://github.com/a6dulrauf/jobsmith/commit/ec4fda49a5ee2c9a9024a78cfeeaf038cdd5b7ca))
+
 ## [0.5.0](https://github.com/santifer/career-ops/compare/web-v0.4.0...web-v0.5.0) (2026-07-30)
 
 
