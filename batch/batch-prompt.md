@@ -309,6 +309,17 @@ discard_reasons:
 via: {agency/recruiter firm as a quoted string, or null for direct applications}
 company_confidential: {true when the end employer is unknown (company is "?"), else false}
 advertised_comp: {verbatim JD salary/range as a quoted string (e.g. "80-90k EUR"), or null when the JD states nothing}
+salary_ask: {the Block D2 recommendation — what the CANDIDATE should ask for. null only when no defensible number could be researched}
+  currency: "{ISO code, e.g. PLN, EUR, AED}"
+  period: "{year | month}"
+  basis: "{gross | net}"
+  range_low: {number, no separators}
+  range_high: {number, no separators}
+  single_number: {number — the one figure for forms that reject a range}
+  floor: {walk-away number, or null}
+  confidence: "{High | Medium | Low}"
+  anchored_to: "{the CITY/market the figure is anchored to — never the candidate's own location}"
+  rationale: "{one sentence: which band, which sources, which seniority}"
 risk_summary:
   legitimacy: "{high_confidence | proceed_with_caution | suspicious}"
   classification: "{clear | flagged | not_evaluated}"
@@ -377,6 +388,17 @@ discard_reasons:
 via: {agency/recruiter firm as a quoted string, or null for direct applications}
 company_confidential: {true when the end employer is unknown (company is "?"), else false}
 advertised_comp: {verbatim JD salary/range as a quoted string (e.g. "80-90k EUR"), or null when the JD states nothing}
+salary_ask: {the Block D2 recommendation — what the CANDIDATE should ask for. null only when no defensible number could be researched}
+  currency: "{ISO code, e.g. PLN, EUR, AED}"
+  period: "{year | month}"
+  basis: "{gross | net}"
+  range_low: {number, no separators}
+  range_high: {number, no separators}
+  single_number: {number — the one figure for forms that reject a range}
+  floor: {walk-away number, or null}
+  confidence: "{High | Medium | Low}"
+  anchored_to: "{the CITY/market the figure is anchored to — never the candidate's own location}"
+  rationale: "{one sentence: which band, which sources, which seniority}"
 risk_summary:
   legitimacy: "{high_confidence | proceed_with_caution | suspicious}"
   classification: "{clear | flagged | not_evaluated}"

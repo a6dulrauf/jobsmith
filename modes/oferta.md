@@ -31,7 +31,9 @@ If `data/blacklist.md` exists, check the posting's company against it before Blo
 Company, compensation, and hiring-signal research must be a single-pass lookup, not an open-ended investigation. This mode is an evaluation workflow, not deep company research.
 
 Hard limits for Blocks D and G combined:
-- hard cap: 5 total WebSearch queries
+- hard cap: 7 total WebSearch queries — of which **at least 2 must be spent on
+  local market pay for this role in this city**, because Block D2 has to quote a
+  number and a number invented without data is worse than no number at all
 - Prefer targeted queries that answer more than one question; stop early when enough evidence exists.
 - Do not invoke `deep-research`, `deep`, or any other research skill.
 - Do not spawn subagents or delegate research to another agent.
@@ -196,6 +198,113 @@ The table's **first row is always the JD's own advertised figure, verbatim** —
 ```
 
 Never blend the advertised figure with researched estimates or replace it with them — market research rows follow below it. This same verbatim figure goes into the Machine Summary `advertised_comp` key (see the report format).
+
+## Block D2 — Your Ask (required, every evaluation)
+
+Block D establishes what the employer is likely to pay. This block answers the
+question the candidate is actually asked, usually in the first screening call or
+as a required form field: **"What are your salary expectations?"**
+
+Never skip this block. An evaluation that analyses the employer's range but
+leaves the candidate to guess their own number has done the easy half.
+
+### The anchoring rule (most important)
+
+**Anchor to the ROLE's market, never the candidate's.**
+
+Quote what this role pays in the city it is based in, in that city's currency.
+The candidate's current salary, their home country's pay scale, and their local
+cost of living are **irrelevant to the number and must never influence it** — a
+candidate in a lower-paying market who anchors on their own salary will name a
+figure far below what the employer already budgeted, and cannot recover from it
+later in the process.
+
+For a remote role, anchor to the market the employer hires and pays from — which
+is where the company is based, or the pay region the JD names, not where the
+candidate sits.
+
+State the currency, the period (year/month), and whether the figure is gross or
+net. In markets where net is the conventional way to discuss pay, give gross and
+add net as a secondary figure.
+
+### Where the number comes from
+
+1. **If the JD states a range, that range wins.** Do not invent a competing one.
+   Place the ask in its **upper half**. Only depart from it if researched market
+   data shows the advertised range is clearly below market, and say so explicitly
+   if you do.
+2. **Otherwise, research the local market** for this role, this seniority, this
+   city. Use the Block D company-type classification: a funded startup, an
+   enterprise, and a staffing vendor pay differently for identical titles.
+3. **Adjust for the seniority actually matched in Blocks B and C** — not the
+   title on the posting. A "Senior" title the candidate matches at mid-level does
+   not justify a senior ask.
+
+### Positioning within the band
+
+Aim upper-middle. Never the floor — that leaves money on the table and signals
+low confidence. Never the ceiling — that screens the candidate out before a
+conversation can happen. Modulate by how strong the match actually is:
+
+| Evaluation score | Position in the researched band |
+|---|---|
+| 4.5 and above | 60th–80th percentile — a strong match can ask confidently |
+| 4.0 – 4.4 | 55th–75th percentile |
+| 3.0 – 3.9 | 45th–65th percentile — a stretch candidate prices themselves out at the top |
+| Below 3.0 | Still give a number, alongside the existing recommendation not to apply |
+
+Never quote below `config/profile.yml` → `compensation.minimum` when it is set.
+If the market band for this role sits entirely below that floor, say so plainly —
+that is a reason not to apply, and it is more useful than a number.
+
+### The single number
+
+Many application forms demand one figure and reject a range. Give one.
+
+Take the **upper-middle of your stated range** — roughly two thirds up, not the
+midpoint — and round it to a natural negotiating figure. Negotiation moves down
+from an opening number, never up, so the midpoint concedes ground before the
+conversation starts.
+
+### Sponsorship and relocation
+
+When the candidate needs sponsorship, **do not discount the ask for it.** Visa
+and relocation costs are the employer's line item, not a deduction from salary,
+and self-discounting invites a lower offer for the same work. If relocation
+support matters, direct the candidate to negotiate it as a separate item —
+relocation allowance, temporary housing, flights — alongside base, not instead
+of it.
+
+### Honesty about thin data
+
+If the market data for this role and city is thin, say so, widen the range, and
+mark confidence Low. A wide honest range beats a precise invented one. Never
+produce a figure with no traceable basis; cite what the numbers came from.
+
+### Required output format
+
+```markdown
+### Your Ask
+
+| | |
+|---|---|
+| **Range to quote** | {low}–{high} {CURRENCY} {gross\|net} per {year\|month} |
+| **If they demand one number** | **{single figure}** |
+| **Basis** | {which market, which sources, which seniority} |
+| **Confidence** | {High \| Medium \| Low} — {one clause on data quality} |
+
+**If asked on a call, say:**
+> "{One or two sentences the candidate can say verbatim — names the range,
+> ties it to market and scope, and stays open.}"
+
+**If a form demands a single number:** {figure}
+
+**Do not go below:** {walk-away figure} — {why}
+```
+
+The verbatim script is not decoration. It is the deliverable: the candidate
+should be able to read it out or paste it into a form without doing any research
+of their own.
 
 ## Block E — Customization Plan
 
@@ -550,6 +659,7 @@ Save full evaluation in `reports/{###}-{company-slug}-{YYYY-MM-DD}.md`.
 (full content of block C)
 
 ## D) Comp and Demand
+(full content of block D, ending with the ### Your Ask table from block D2)
 (full content of block D)
 
 ## E) Customization Plan

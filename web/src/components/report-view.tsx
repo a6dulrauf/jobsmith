@@ -10,6 +10,8 @@ import { CompanyLogo } from "@/components/company-logo";
 import { ScoreMethodology } from "@/components/score-methodology";
 import { GeneratePdfButton } from "@/components/generate-pdf-button";
 import { GenerateDocButtons, type ExistingDocs } from "@/components/generate-doc-buttons";
+import { SalaryAskCard } from "@/components/salary-ask-card";
+import { parseSalaryAsk } from "@/lib/salary-ask.mjs";
 import { RecordOutcome } from "@/components/record-outcome";
 import { ApplyButton } from "@/components/apply-button";
 import { DeleteFromTracker } from "@/components/delete-from-tracker";
@@ -93,6 +95,10 @@ export function ReportView({
   canDelete?: boolean;
 }) {
   const meta = report ? parseReport(report) : null;
+  // Block D2's recommendation. Absent on reports written before the block
+  // existed, and on any evaluation that could not research a defensible
+  // figure — in both cases the card simply does not render.
+  const salaryAsk = report ? parseSalaryAsk(report) : null;
   const field = (label: string) => meta?.fields.find((f) => f.label === label)?.value;
   const score = app?.score || field("Score");
   const date = app?.date || field("Date");
@@ -133,6 +139,15 @@ export function ReportView({
           <GenerateDocButtons n={id} company={app?.company ?? meta?.title ?? id} existing={existingDocs} />
           <ApplyButton n={id} url={url && url.startsWith("http") ? url : undefined} company={app?.company ?? meta?.title ?? id} pdfReady={(app?.pdf ?? "").includes("✅")} />
         </div>
+
+        {/* Above the report body on purpose: "what are your salary expectations?"
+            is asked in the first screening call, so the answer has to be findable
+            without scrolling through an A-G evaluation to look for it. */}
+        {salaryAsk && (
+          <div className="mt-5">
+            <SalaryAskCard ask={salaryAsk} />
+          </div>
+        )}
 
         {/* Recording what happened is what makes /insights meaningful later, so
             it sits on the report page rather than somewhere you would forget. */}
