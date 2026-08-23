@@ -55,3 +55,49 @@ project's.
 
 Full commit history, including every upstream commit and its original author,
 is preserved in this repository's git history.
+
+Commercial use
+--------------
+
+Both the upstream code and this fork's additions are MIT licensed, and MIT grants
+the right to "use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies" — so selling this software, or running it as a paid service, is
+permitted by the code licence. The only standing obligation is the one already
+met above: the copyright notice and permission notice travel with every copy.
+
+The name is separate. "career-ops" is a trademark of Santiago Fernández de
+Valderrama, with an application filed at the Spanish Patent and Trademark Office
+in classes 9 (downloadable software) and 42 (Software-as-a-Service) — class 42
+being precisely the class a paid hosted service would fall under. The upstream
+TRADEMARK.md reserves, for commercial contexts:
+
+  - product, service or company names containing "career-ops" or close variants
+  - endorsement, sponsorship or affiliation claims of any kind
+  - domain names, social handles and app-store listings using the name
+  - logos, wordmarks and visual identity assets
+
+and explicitly permits, without asking:
+
+  - forking and modifying the code
+  - naming a fork distinctly
+  - describing origin and lineage with attribution
+
+Jobsmith is named distinctly, states its lineage factually, uses none of the
+upstream visual identity, and claims no endorsement. Those conditions hold
+whether or not the project is ever monetised.
+
+Two things to do before charging for this:
+
+  1. Close the bundled-font gap. See fonts/NOTICE — the SIL OFL requires its text
+     to ship alongside the fonts, and no copy is present.
+  2. Write to hi@santifer.io. The trademark policy invites exactly this
+     conversation ("we'd rather have the conversation than have a surprise"), and
+     a short factual note about a distinctly-named commercial fork costs nothing
+     while the application is pending.
+
+Third-party dependencies were checked for copyleft that would conflict with a
+closed or paid offering. None found: js-yaml (MIT), dotenv (BSD-2-Clause),
+playwright and @google/generative-ai (Apache-2.0), and the Go dashboard's
+bubbletea, lipgloss and termenv (MIT) with golang.org/x/sys (BSD-3-Clause).
+
+None of the above is legal advice.

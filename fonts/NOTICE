@@ -1,0 +1,30 @@
+Bundled fonts — licence status
+==============================
+
+This directory ships four woff2 files, redistributed with the project and
+referenced by templates/cv-template.html, resume-template.html and
+cv-template.zh-minimal.html:
+
+  dm-sans-latin.woff2 / dm-sans-latin-ext.woff2
+  space-grotesk-latin.woff2 / space-grotesk-latin-ext.woff2
+
+DM Sans and Space Grotesk are both published under the SIL Open Font License
+1.1, which permits bundling, modification and commercial use — including in a
+paid product.
+
+⚠️ OUTSTANDING: the OFL requires that a copy of the licence accompany the fonts
+wherever they are redistributed. No licence text ships here. That gap is
+inherited from upstream, but it becomes this project's responsibility the moment
+these files are redistributed under its name — and materially so if Jobsmith is
+ever sold or offered as a paid service.
+
+To close it, copy the OFL text from each font's own repository into this
+directory (do not transcribe it from memory — the licence must be verbatim):
+
+  DM Sans        https://github.com/googlefonts/dm-fonts
+  Space Grotesk  https://github.com/floriankarsten/space-grotesk
+
+Note: templates/cv-template.html currently sets a system font stack
+("Liberation Sans", Helvetica Neue, Arial, DejaVu Sans) for ATS text-extraction
+reasons, so these faces may not be doing much work. If they turn out to be
+unused, deleting them removes the obligation entirely — the simpler fix.
