@@ -11,7 +11,10 @@ import { acquireTrackerWrite, releaseTrackerWrite } from "@/lib/core/run-registr
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 800; // a real oferta evaluation / pdf-mode CV tailoring + render is heavy and multi-step
+// Measured, not guessed: a real oferta evaluation of a Workday posting took
+// 9m12s end to end (JD extraction via the CXS endpoint, liveness check, three
+// Block-D/G web searches, then a 47KB A-G report). 800s did not cover it.
+export const maxDuration = 1200;
 
 // The web ORCHESTRATES the real career-ops engine — it does NOT reimplement it.
 // kind "evaluate" runs the REAL modes/oferta.md and persists the canonical
@@ -564,6 +567,7 @@ export async function POST(req: Request) {
   // otherwise a late enqueue onto a closed controller throws uncaught (see #1155).
   let closed = false;
   let killer: ReturnType<typeof setTimeout> | undefined;
+  let heartbeat: ReturnType<typeof setInterval> | undefined;
   // pdf-kind's render+mark work (renderPdf, below) keeps running detached even
   // after the agent child closes — and even after a client disconnect fires
   // cancel(). Track its promise so cancel() can defer releasing writeToken
@@ -617,7 +621,13 @@ export async function POST(req: Request) {
       // and no report — the failure this widening fixes. Unlike 'pdf'/'cover'
       // there is no post-agent render to reserve headroom for, so the full 600s
       // is the agent's, and 200s still separates it from maxDuration.
-      const killMs = kind === "fix-portal" ? 285_000 : 600_000;
+      // 'evaluate' and 'research' get 900s because that is what the work takes:
+      // the measured Workday evaluation above finished at 552s, and a slower
+      // posting or a flakier search round would clear 600s. Everything with a
+      // post-agent render stays at 600s so the render still has room under
+      // maxDuration; 'fix-portal' is genuinely short.
+      const killMs =
+        kind === "evaluate" || kind === "research" ? 900_000 : kind === "fix-portal" ? 285_000 : 600_000;
       killer = setTimeout(() => {
         try { child.kill("SIGTERM"); } catch { /* ignore */ }
       }, killMs);
@@ -625,9 +635,22 @@ export async function POST(req: Request) {
         if (closed) return;
         try { controller.enqueue(enc.encode(JSON.stringify(obj) + "\n")); } catch { closed = true; }
       };
+      // Keepalive. The agent goes silent for minutes at a stretch — a single
+      // WebSearch, or the one Write that emits a 47KB report, produces no
+      // stream events at all — and a response body with nothing on the wire is
+      // indistinguishable from a dead one to every timeout between here and the
+      // tab. A real scoring run died this way at 3.9min: the server logged
+      // `POST /api/run 200`, the browser's reader threw, and the user saw
+      // "Connection error" with the report one step from written. /api/apply/
+      // prefill already heartbeats its own long spawn for exactly this reason.
+      //
+      // 'ping' matches no branch in the client's event switch, so it costs a
+      // JSON.parse and is discarded — the point is the bytes, not the message.
+      heartbeat = setInterval(() => send({ type: "ping" }), 10_000);
       const close = () => {
         if (!closed) {
           closed = true;
+          if (heartbeat) clearInterval(heartbeat);
           if (killer) clearTimeout(killer);
           releaseWriteTokenOnce();
           try { controller.close(); } catch { /* */ }
@@ -948,6 +971,7 @@ export async function POST(req: Request) {
     },
     cancel() {
       closed = true;
+      if (heartbeat) clearInterval(heartbeat);
       if (killer) clearTimeout(killer);
       try { child.kill("SIGTERM"); } catch { /* ignore */ }
       if (pdfRenderPromise) {
