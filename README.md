@@ -136,6 +136,30 @@ improvements have to be brought over deliberately. The original README is kept a
 
 ---
 
+## Licence, and using this commercially
+
+Both the upstream code and this fork's additions are **MIT licensed**, which
+grants the right to "use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies". Selling this, or running it as a paid service, is permitted.
+The single obligation is to keep the copyright and permission notices with every
+copy — see [LICENSE](LICENSE).
+
+**The name is a separate matter.** "career-ops" is a trademark of the upstream
+author, with an application pending in classes 9 and 42 (software and SaaS).
+Its policy reserves the name for product naming, endorsement claims, domains and
+visual identity in commercial contexts — and explicitly permits forking, naming a
+fork distinctly, and describing lineage with attribution. Jobsmith does the
+latter and none of the former.
+
+If you fork this in turn, or take it commercial, [NOTICE](NOTICE) sets out the
+boundary in full, including the two items worth settling first: the bundled fonts
+ship without their SIL OFL text (see [fonts/NOTICE](fonts/NOTICE)), and the
+upstream trademark policy invites a short note to its maintainer before a
+commercial launch. Dependencies were checked for copyleft that would conflict
+with a closed or paid offering; there is none.
+
+Not legal advice.
+
 ## Credit
 
 career-ops was built by Santiago Fernández de Valderrama, who used it to evaluate
