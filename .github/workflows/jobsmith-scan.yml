@@ -73,7 +73,7 @@ jobs:
       # you need to see what the run actually did.
       - name: Upload the new-postings payload
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: new-postings
           path: data/new-postings.json
