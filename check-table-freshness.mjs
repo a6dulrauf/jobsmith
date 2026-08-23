@@ -50,6 +50,7 @@
  * Issue #2036 — github.com/santifer/career-ops
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -499,7 +500,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       process.exit(1);
     }
   } else {
-    todayDate = parseDate(new Date().toISOString().slice(0, 10));
+    todayDate = parseDate(todayISO());
   }
 
   // Precedence: --max-age-months flag > config table_freshness.max_age_months > default 12.

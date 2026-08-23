@@ -34,6 +34,7 @@
  * so the index can never serve stale reads.
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, copyFileSync, existsSync, mkdirSync, statSync } from 'fs';
 import { createHash } from 'crypto';
 import { dirname, resolve, join } from 'path';
@@ -302,7 +303,7 @@ function reportDiagnostics(diag) {
 
 function syncIndex(db, states) {
   const { apps, diag } = parseTracker(states);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
 
   db.exec('BEGIN');
   db.exec('PRAGMA defer_foreign_keys = ON'); // full rebuild — FKs settle at commit

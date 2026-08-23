@@ -18,6 +18,7 @@
  *   3. Free API key: https://openrouter.ai
  */
 
+import { todayISO } from './lib/today.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -523,7 +524,7 @@ function addToPipeline(entries) {
 
   if (newEntries.length === 0) return 0;
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayISO();
   let pipeline = existingPipeline;
   let hist = history;
 
@@ -659,7 +660,7 @@ async function cmdEvaluate(input, ctx) {
 
   try {
     // Save report
-    const today   = new Date().toISOString().split('T')[0];
+    const today   = todayISO();
     const num     = reservedNumbers[0];
     const slug    = extractCompanySlug(jdText, typeof input === 'string' ? input : null);
     const numStr  = formatReportNumber(num);

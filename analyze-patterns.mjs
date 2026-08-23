@@ -13,6 +13,7 @@
  *      node analyze-patterns.mjs --self-test
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname, relative, sep } from 'path';
 import { fileURLToPath } from 'url';
@@ -1018,7 +1019,7 @@ function analyze() {
     metadata: {
       total: enriched.length,
       dateRange: { from: dates[0], to: dates[dates.length - 1] },
-      analysisDate: new Date().toISOString().split('T')[0],
+      analysisDate: todayISO(),
       byOutcome: {
         positive: enriched.filter(e => e.outcome === 'positive').length,
         negative: enriched.filter(e => e.outcome === 'negative').length,

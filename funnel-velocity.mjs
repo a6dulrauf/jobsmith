@@ -34,6 +34,7 @@
  *      node funnel-velocity.mjs --benchmarks path/to/benchmarks.yml
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -667,7 +668,7 @@ function main() {
   const logPath = join(dirname(trackerPath), 'status-log.tsv');
   const trackerContent = existsSync(trackerPath) ? readFileSync(trackerPath, 'utf-8') : '';
   const logContent = existsSync(logPath) ? readFileSync(logPath, 'utf-8') : '';
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = todayISO();
 
   if (!trackerContent) {
     if (summaryMode) console.log(`No tracker found at ${trackerPath} — nothing to calibrate yet.`);

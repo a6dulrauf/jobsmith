@@ -16,6 +16,7 @@
  *   OPENAI_MODEL (or --model)   — the model id
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
@@ -318,7 +319,7 @@ try {
   console.log(`\n✅  Tailored HTML saved: ${htmlPath}`);
 
   // Print next steps
-  const pdfFilename = `cv-${candidateName}-${companySlug}-${roleSlug}-${new Date().toISOString().split('T')[0]}.pdf`;
+  const pdfFilename = `cv-${candidateName}-${companySlug}-${roleSlug}-${todayISO()}.pdf`;
   const reportNumMatch = reportFilename.match(/^(\d+)-/);
   const reportNum = reportNumMatch ? reportNumMatch[1] : '001';
 

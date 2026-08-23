@@ -22,6 +22,7 @@
  *   Smaller models (llama3.2:3b, phi3) may produce incomplete evaluations.
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -346,7 +347,7 @@ if (saveReport) {
 
     reservedNumbers   = await reserveReportNumbers(1, { rootDir: ROOT, reportsDir: PATHS.reports });
     const num         = formatReportNumber(reservedNumbers[0]);
-    const today       = new Date().toISOString().split('T')[0];
+    const today       = todayISO();
     const companySlug = company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const filename    = `${num}-${companySlug}-${today}.md`;
     const reportPath  = join(PATHS.reports, filename);

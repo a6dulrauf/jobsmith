@@ -54,6 +54,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { createHash, randomUUID } from 'crypto';
 import { tmpdir } from 'os';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
+import { todayISO } from './lib/today.mjs';
 import {
   resolveCadenceConfig,
   normalizeStatus,
@@ -90,9 +91,7 @@ export class SeedError extends Error {
   }
 }
 
-function todayStr() {
-  return new Date().toISOString().slice(0, 10);
-}
+const todayStr = todayISO;
 
 /**
  * Validate a `YYYY-MM-DD` string is both well-formed AND a real calendar date.

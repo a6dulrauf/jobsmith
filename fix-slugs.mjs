@@ -29,6 +29,7 @@
  *   node fix-slugs.mjs --file <path> # use a specific portals file
  */
 
+import { todayISO } from './lib/today.mjs';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { pathToFileURL } from 'url';
@@ -263,7 +264,7 @@ function applyFix(lines, block, suggested, oldAts, dateStr) {
  * @param {{dryRun?: boolean, dateStr?: string}} [opts]
  * @returns {{text: string, fixes: Array<{name: string, oldAts: string, newAts: string, careersUrlOld: string, careersUrlNew: string}>}}
  */
-export function computeFixes(rawText, results, { dateStr = new Date().toISOString().slice(0, 10) } = {}) {
+export function computeFixes(rawText, results, { dateStr = todayISO() } = {}) {
   const { lines, blocks } = splitCompanyBlocks(rawText);
   const blocksByName = new Map(blocks.map((b) => [b.name, b]));
 

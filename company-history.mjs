@@ -49,6 +49,7 @@ import yaml from 'js-yaml';
 import { parseScanHistory, detectReposts } from './detect-reposts.mjs';
 import { normalizeCompany, resolveTrackerPath } from './tracker-utils.mjs';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
+import { todayISO } from './lib/today.mjs';
 import {
   parseFollowups,
   parseAppliedDate,
@@ -189,9 +190,12 @@ export function resolveDefaultSilenceWindow(rootDir = CAREER_OPS) {
 }
 
 // --- today() — injectable for deterministic tests ---
-export function today() {
-  return new Date(new Date().toISOString().split('T')[0]);
-}
+// UTC-midnight Date of the LOCAL calendar day. This module does its date
+// arithmetic in UTC (parseDate builds UTC midnight, addDays uses setUTCDate),
+// so `today` must stay in that space — a local-midnight Date mixed into UTC
+// arithmetic shifts results by a day. What changes is only WHICH day: the
+// user's, not Greenwich's.
+export const today = () => new Date(todayISO());
 
 function resolveNow(now) {
   if (now instanceof Date) return now;

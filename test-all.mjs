@@ -24,6 +24,7 @@
  */
 
 
+import { todayISO } from './lib/today.mjs';
 import { execSync, execFile, execFileSync, spawn, spawnSync } from 'child_process';
 import { readFileSync, existsSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, statSync, unlinkSync, realpathSync, symlinkSync, copyFileSync } from 'fs';
 import { join, dirname, basename, delimiter } from 'path';
@@ -2211,7 +2212,10 @@ if (
 if (
   ofertaMode.includes('## Bounded Research Budget') &&
   ofertaMode.includes('single-pass') &&
-  ofertaMode.includes('hard cap: 5 total WebSearch queries') &&
+  // The cap is a tunable number, not the invariant — Block D2 raised it from 5
+  // to 7 so comp research gets its own queries. What must never regress is that
+  // a hard cap EXISTS and the research stays non-recursive.
+  /hard cap: \d+ total WebSearch queries/.test(ofertaMode) &&
   ofertaMode.includes('Do not invoke `deep-research`') &&
   ofertaMode.includes('Do not spawn subagents') &&
   ofertaMode.includes('Do not continue researching after the query cap is reached') &&
@@ -4960,7 +4964,9 @@ if (fileExists('VERSION')) {
 
 console.log('\n12. archive-posting.mjs');
 
-const todayStr = new Date().toISOString().split('T')[0];
+// Local, matching archive-posting.mjs — a UTC expectation here fails for
+// several hours every day in any timezone east of Greenwich.
+const todayStr = todayISO();
 
 // dry-run: URL-based company detection across each supported ATS
 for (const [url, expected] of [
@@ -6308,6 +6314,10 @@ try {
     try {
       copyFileSync(join(ROOT, 'followup-cadence.mjs'), join(e2eTmp, 'followup-cadence.mjs'));
       copyFileSync(join(ROOT, 'tracker-parse.mjs'), join(e2eTmp, 'tracker-parse.mjs'));
+      // followup-cadence imports lib/today.mjs for the local calendar date, so
+      // the copy needs the directory too or the child fails to resolve it.
+      mkdirSync(join(e2eTmp, 'lib'), { recursive: true });
+      copyFileSync(join(ROOT, 'lib', 'today.mjs'), join(e2eTmp, 'lib', 'today.mjs'));
       copyFileSync(join(ROOT, 'tracker-aliases.json'), join(e2eTmp, 'tracker-aliases.json'));
       symlinkSync(join(ROOT, 'node_modules'), join(e2eTmp, 'node_modules'), 'dir');
       mkdirSync(join(e2eTmp, 'data'), { recursive: true });

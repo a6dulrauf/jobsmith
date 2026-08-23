@@ -26,6 +26,7 @@
  *      node assessment-log.mjs --self-test
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, existsSync, appendFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -137,7 +138,7 @@ function addEntry(args) {
     const m = args[i].match(/^--(company|report|platform|subject|threshold|score|stale)$/);
     if (m) { fields[m[1]] = args[i + 1] ?? ''; i++; }
   }
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   let row;
   try {
     row = buildRow(fields, today);

@@ -26,6 +26,7 @@
  * Uses Chromium headless to render the HTML and produce a clean, ATS-parseable PDF.
  */
 
+import { todayISO } from './lib/today.mjs';
 import { chromium } from 'playwright';
 import { resolve, dirname, relative, sep, isAbsolute } from 'path';
 import { readFile } from 'fs/promises';
@@ -379,7 +380,7 @@ function updatePDFManifest(reportNum, pdfPath, htmlPath, format) {
   const toRel = (p) => relative(__dirname, p).split(sep).join('/');
   const relPDF = toRel(pdfPath);
   const relHTML = repoRelativeManifestPath(htmlPath);
-  const date = new Date().toISOString().slice(0, 10);
+  const date = todayISO();
   // "008" and "8" are the same report — zero-padded report-link form vs
   // unpadded tracker-# form. Normalize so replacement rows match.
   const normKey = (s) => (s || '').trim().replace(/^0+(?=\d)/, '');

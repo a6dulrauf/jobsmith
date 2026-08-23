@@ -18,6 +18,7 @@
  * #1604 PR-2) — null until the first non-dry scan creates the file.
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -449,7 +450,7 @@ export function computeAllStats({
 
   return {
     metadata: {
-      generatedAt: new Date().toISOString().slice(0, 10),
+      generatedAt: todayISO(),
       sources: {
         tracker: !!apps,
         scanHistory: !!scanHist,

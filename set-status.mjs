@@ -67,6 +67,7 @@
  * tracker remains the source of truth for state. Read by funnel-velocity.mjs.
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, existsSync, appendFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -161,7 +162,7 @@ if (flags.on !== null) {
   const d = m ? new Date(`${flags.on}T00:00:00Z`) : null;
   const roundTrips = d && !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === flags.on;
   if (!roundTrips) failUsage(`--on expects a real date as YYYY-MM-DD, got "${flags.on}"`);
-  if (flags.on > new Date().toISOString().slice(0, 10)) failUsage(`--on date is in the future: "${flags.on}"`);
+  if (flags.on > todayISO()) failUsage(`--on date is in the future: "${flags.on}"`);
 }
 
 const selector = explicitSelector ? null : positional[0];
@@ -471,7 +472,7 @@ if (changed && !flags.dryRun) {
 let statusLogged = false;
 if (statusChanged && !flags.dryRun) {
   const logPath = join(dirname(APPS_FILE), 'status-log.tsv');
-  const eventDate = flags.on ?? new Date().toISOString().slice(0, 10);
+  const eventDate = flags.on ?? todayISO();
   try {
     appendFileSync(logPath, `${target.num}\t${eventDate}\t${oldStatus}\t${newStatus}\tset-status\t\n`);
     statusLogged = true;

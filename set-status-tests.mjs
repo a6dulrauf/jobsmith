@@ -20,6 +20,7 @@
  *   3 — ambiguous company match or numeric selector/report-link mismatch
  */
 
+import { todayISO } from './lib/today.mjs';
 import { execFileSync } from 'child_process';
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, chmodSync, utimesSync } from 'fs';
 import { join, dirname } from 'path';
@@ -687,7 +688,7 @@ const TRACKER_REPORT_MISMATCH = `# Applications Tracker
 
   // real transition → one line, today's date, from/to states, source set-status
   const r1 = runSetStatus(['2', 'Applied', '--json'], sb);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   let log = '';
   try { log = readFileSync(logPath, 'utf-8'); } catch {}
   if (r1.code === 0 && log === `2\t${today}\tEvaluated\tApplied\tset-status\t\n`) {

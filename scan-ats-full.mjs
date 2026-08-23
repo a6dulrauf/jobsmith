@@ -30,6 +30,7 @@
  *   node scan-ats-full.mjs --help               # print this usage block and exit
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, renameSync, unlinkSync } from 'fs';
 import { pathToFileURL } from 'url';
 import { createHash } from 'crypto';
@@ -629,7 +630,7 @@ async function main() {
   // includeUndated (when false) for a tenant that exposes no postedOn at
   // all, since its postings would all be dropped as undated below anyway.
   const ctx = { ...makeHttpCtx(), sinceMs: cutoff, includeUndated: opts.includeUndated };
-  const date = new Date().toISOString().slice(0, 10);
+  const date = todayISO();
 
   // Same defensive default as completedSources/counters below: a version-1
   // checkpoint that lost its offers array would otherwise set this to undefined

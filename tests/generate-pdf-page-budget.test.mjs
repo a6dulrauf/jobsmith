@@ -27,6 +27,11 @@ copyFileSync(join(ROOT, 'generate-pdf.mjs'), script);
 // theming, #1837); copy it into the sandbox too or the isolated script fails
 // to load with ERR_MODULE_NOT_FOUND before it can parse any --max-pages arg.
 copyFileSync(join(ROOT, 'theme-style.mjs'), join(sandbox, 'theme-style.mjs'));
+// Same reason for lib/today.mjs — the PDF filename carries the LOCAL calendar
+// date, so the script imports the shared helper rather than deriving it from
+// UTC and dating a CV a day early for anyone east of Greenwich.
+mkdirSync(join(sandbox, 'lib'), { recursive: true });
+copyFileSync(join(ROOT, 'lib', 'today.mjs'), join(sandbox, 'lib', 'today.mjs'));
 mkdirSync(playwrightStub, { recursive: true });
 writeFileSync(join(playwrightStub, 'package.json'), JSON.stringify({
   name: 'playwright',

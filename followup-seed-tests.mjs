@@ -12,6 +12,7 @@
  * Run: node followup-seed-tests.mjs
  */
 
+import { todayISO } from './lib/today.mjs';
 import { execFileSync } from 'child_process';
 import { readFileSync, writeFileSync, mkdtempSync, mkdirSync, rmSync, existsSync, utimesSync } from 'fs';
 import { join, dirname } from 'path';
@@ -29,7 +30,7 @@ function pass(m) { console.log(`PASS ${m}`); passed++; }
 function fail(m) { console.error(`FAIL ${m}`); failed++; }
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  return todayISO();
 }
 
 // --- sandbox helpers --------------------------------------------------------

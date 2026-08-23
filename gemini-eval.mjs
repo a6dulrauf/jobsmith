@@ -30,6 +30,7 @@
  * `modelName` below and the `--model` examples accordingly.
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -400,7 +401,7 @@ if (saveReport) {
 
       reservedNumbers   = await reserveReportNumbers(1, { rootDir: ROOT, reportsDir: PATHS.reports });
       const num         = formatReportNumber(reservedNumbers[0]);
-      const today       = new Date().toISOString().split('T')[0];
+      const today       = todayISO();
       const companySlug = slugifyCompany(company);
       const filename    = `${num}-${companySlug}-${today}.md`;
       const reportPath  = join(PATHS.reports, filename);

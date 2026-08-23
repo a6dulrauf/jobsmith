@@ -16,6 +16,7 @@ import { join, dirname, relative, sep } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import yaml from 'js-yaml';
 import { resolveColumns, parseTrackerRow } from './tracker-parse.mjs';
+import { todayISO } from './lib/today.mjs';
 
 const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
 const APPS_FILE = existsSync(join(CAREER_OPS, 'data/applications.md'))
@@ -110,9 +111,12 @@ export function normalizeStatus(raw) {
 }
 
 // --- Date helpers ---
-function today() {
-  return new Date(new Date().toISOString().split('T')[0]);
-}
+// UTC-midnight Date of the LOCAL calendar day. This module does its date
+// arithmetic in UTC (parseDate builds UTC midnight, addDays uses setUTCDate),
+// so `today` must stay in that space — a local-midnight Date mixed into UTC
+// arithmetic shifts results by a day. What changes is only WHICH day: the
+// user's, not Greenwich's.
+const today = () => new Date(todayISO());
 
 export function parseDate(dateStr) {
   if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr.trim())) return null;

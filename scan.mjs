@@ -31,6 +31,7 @@
  *   node scan.mjs --include-blacklisted        # let data/blacklist.md matches through (annotated)
  */
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from 'fs';
 import { pathToFileURL, fileURLToPath } from 'url';
 import path from 'path';
@@ -837,7 +838,7 @@ function daysBetweenIsoDates(start, end) {
   return Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
 }
 
-export function shouldDedupScanHistoryRow({ firstSeen, status = 'added' }, { recheckAfterDays = null, today = new Date().toISOString().slice(0, 10) } = {}) {
+export function shouldDedupScanHistoryRow({ firstSeen, status = 'added' }, { recheckAfterDays = null, today = todayISO() } = {}) {
   if (PERMANENT_SCAN_HISTORY_STATUSES.has(status)) return true;
   if (status.startsWith('cooldown:')) {
     const parts = status.split(':');
@@ -2013,7 +2014,7 @@ async function main() {
   const seenCompanyRoles = loadSeenCompanyRoles(APPLICATIONS_PATH, canonicalizeCompany, { policy: historyPolicy });
 
   // 5. Fetch from each target
-  const date = new Date().toISOString().slice(0, 10);
+  const date = todayISO();
   const windows = loadReApplyWindows();
   const cooldownFilter = buildCooldownFilter(windows, date);
   let totalFilteredCooldown = 0;

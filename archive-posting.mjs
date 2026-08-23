@@ -21,6 +21,7 @@ import { writeFile, readFile } from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { todayISO } from './lib/today.mjs';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const JDS_DIR = join(ROOT, 'jds');
@@ -107,9 +108,7 @@ function slugify(text) {
     .slice(0, 60);
 }
 
-function today() {
-  return new Date().toISOString().split('T')[0];
-}
+const today = todayISO;
 
 /**
  * Try to extract company/role from the rendered page title.

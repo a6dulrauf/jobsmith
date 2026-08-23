@@ -26,6 +26,7 @@ import { parseTrackerRow, resolveColumns, extractTrackerReportNumbers } from './
 import { roleFuzzyMatch } from './role-matcher.mjs';
 import { resolveTrackerPath, normalizeCompany } from './tracker-utils.mjs';
 import { parsePdfIndex } from './find.mjs';
+import { todayISO } from './lib/today.mjs';
 
 const CAREER_OPS = dirname(fileURLToPath(import.meta.url));
 const NODE = process.execPath;
@@ -46,9 +47,7 @@ function slugify(text) {
     .slice(0, 60) || 'unknown';
 }
 
-function today() {
-  return new Date().toISOString().split('T')[0];
-}
+const today = todayISO;
 
 const OUTCOME_MAP = {
   interview_progress: { state: 'Interview', defaultNote: 'Stage updated' },

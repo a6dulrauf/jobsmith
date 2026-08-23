@@ -17,6 +17,7 @@
  *   node scan-interamt.mjs --keyword "Softwareentwickler"
  */
 
+import { todayISO } from './lib/today.mjs';
 import { chromium } from 'playwright';
 import { readFileSync, existsSync, mkdirSync } from 'fs';
 import yaml from 'js-yaml';
@@ -257,7 +258,7 @@ async function main() {
   mkdirSync('data', { recursive: true });
 
   const { seen } = loadSeenUrls();
-  const date = new Date().toISOString().slice(0, 10);
+  const date = todayISO();
 
   const lastScanDate = NO_DATE_FILTER ? null : loadLastScanDate();
   if (NO_DATE_FILTER) {

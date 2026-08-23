@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { todayISO } from './lib/today.mjs';
 import { readFileSync, writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { fileURLToPath } from 'url';
@@ -42,7 +43,7 @@ function normalizeState(state) {
 }
 
 function normalizeDate(date) {
-  return inline(date || new Date().toISOString().slice(0, 10));
+  return inline(date || todayISO());
 }
 
 function quoteBlock(value) {

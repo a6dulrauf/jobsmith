@@ -25,6 +25,7 @@
 //         company:  [company, companyName]
 //         location: [location, formattedLocation]
 
+import { todayISO } from '../../lib/today.mjs';
 import { mkdirSync, writeFileSync, existsSync } from 'fs';
 import { createHash } from 'crypto';
 import { join } from 'path';
@@ -132,7 +133,7 @@ function saveJd(normalized, descriptionBody, sourceLabel) {
     const filepath = join(JDS_DIR, filename);
     relPath = `${JDS_DIR}/${filename}`;
     if (existsSync(filepath)) return relPath;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayISO();
     const content = `---
 title: ${yamlEscape(normalized.title)}
 company: ${yamlEscape(normalized.company)}
