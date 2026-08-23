@@ -138,28 +138,21 @@ export function ReportView({
           <GeneratePdfButton n={id} company={app?.company ?? meta?.title ?? id} pdfReady={(app?.pdf ?? "").includes("✅")} />
           <GenerateDocButtons n={id} company={app?.company ?? meta?.title ?? id} existing={existingDocs} />
           <ApplyButton n={id} url={url && url.startsWith("http") ? url : undefined} company={app?.company ?? meta?.title ?? id} pdfReady={(app?.pdf ?? "").includes("✅")} />
+          {/* Every action for this application sits in one row. Both of these
+              are inline pills until clicked, and each expands to a full-width
+              panel that flex-wrap drops onto its own line — so the collapsed row
+              stays tight and the open state still gets room. Removing is last
+              and stays muted: it is the one destructive control here. */}
+          {app && <RecordOutcome n={id} company={app.company} />}
+          {app && canDelete && <DeleteFromTracker n={id} />}
         </div>
 
-        {/* Above the report body on purpose: "what are your salary expectations?"
-            is asked in the first screening call, so the answer has to be findable
-            without scrolling through an A-G evaluation to look for it. */}
+        {/* Below the actions, above the report body: "what are your salary
+            expectations?" is asked in the first screening call, so the answer has
+            to be findable without scrolling through an A-G evaluation for it. */}
         {salaryAsk && (
           <div className="mt-5">
             <SalaryAskCard ask={salaryAsk} />
-          </div>
-        )}
-
-        {/* Recording what happened is what makes /insights meaningful later, so
-            it sits on the report page rather than somewhere you would forget. */}
-        {app && (
-          <div className="mt-3">
-            <RecordOutcome n={id} company={app.company} />
-          </div>
-        )}
-
-        {app && canDelete && (
-          <div className="mt-3">
-            <DeleteFromTracker n={id} />
           </div>
         )}
 

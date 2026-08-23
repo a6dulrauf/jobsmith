@@ -72,7 +72,9 @@ export function DeleteFromTracker({ n }: { n: string }) {
   }
 
   return (
-    <div className="rounded-lg border border-red-400/30 bg-red-500/[0.06] p-3 text-xs">
+    // w-full so that, sitting in the report page's wrapping action row, the
+    // open confirm takes its own line instead of being squeezed between pills.
+    <div className="w-full rounded-lg border border-red-400/30 bg-red-500/[0.06] p-3 text-xs">
       <p className="font-medium text-foreground">Permanently remove application #{n} from your tracker?</p>
       <p className="mt-1 text-muted">
         This can’t be undone.{orphan ? ` Its report file (${orphan}) is left on disk.` : ""}
