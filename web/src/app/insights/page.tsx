@@ -443,7 +443,7 @@ export default async function InsightsPage() {
       <h1 className="text-2xl font-semibold">Insights</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         What your own pipeline data says about your search. Every number here comes from a
-        career-ops script reading your local files — no model calls, nothing uploaded, free to
+        local script reading your own files — no model calls, nothing uploaded, free to
         refresh. Reload the page to re-run them.
       </p>
 

@@ -46,7 +46,7 @@ export default async function ProfilePage() {
     <div className="mx-auto max-w-4xl px-6 py-10">
       <h1 className="text-2xl font-semibold">Profile</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        How career-ops presents you. These files decide which CV framing fires for a given
+        How Jobsmith presents you. These files decide which CV framing fires for a given
         job, what your cover letters claim, and how roles get scored. Read-only here —
         edit them in your editor or ask the agent.
       </p>

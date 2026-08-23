@@ -4,11 +4,18 @@ import { AppShell } from "@/components/app-shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "career-ops — official web experience",
-  description: "The official, local-first web experience for career-ops.",
+  // Jobsmith, not career-ops: this is a fork, and the inherited title claimed to
+  // be the "official" career-ops experience — an endorsement this project does
+  // not have and its upstream's trademark policy specifically reserves.
+  // Only what a person READS is renamed. Internal identifiers keep the
+  // career-ops spelling (CAREER_OPS_ROOT, the localStorage keys, the skill
+  // directories, modes/) so upstream changes still merge cleanly and nobody's
+  // saved settings are orphaned.
+  title: "Jobsmith",
+  description: "A local-first job-search workbench. Finds roles, scores them against your CV, and tailors a document set per application.",
   // Home-screen / standalone (iOS): let our theme-color flow up to the status bar
   // + Dynamic Island; safe-area insets handle the layout.
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "career-ops" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Jobsmith" },
 };
 
 export const viewport: Viewport = {
