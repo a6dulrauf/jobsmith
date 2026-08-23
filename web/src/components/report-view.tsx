@@ -137,6 +137,22 @@ export function ReportView({
           {app && <StatusSelect n={id} current={app.status} />}
           <GeneratePdfButton n={id} company={app?.company ?? meta?.title ?? id} pdfReady={(app?.pdf ?? "").includes("✅")} />
           <GenerateDocButtons n={id} company={app?.company ?? meta?.title ?? id} existing={existingDocs} />
+          {/* The posting itself. Apply next to it is the form-proxy and stays
+              locked until a tailored CV exists — so without this there is no way
+              to reach the actual job from its own report, which is the one link
+              someone about to apply always wants. Previously it existed only as
+              the word "posting" in muted 12px among the metadata below. */}
+          {url && url.startsWith("http") && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-medium transition-colors hover:bg-surface-hover max-sm:min-h-[44px]"
+              title="Open the job posting on the company's own site"
+            >
+              <ExternalLink className="size-3.5" /> Open job posting
+            </a>
+          )}
           <ApplyButton n={id} url={url && url.startsWith("http") ? url : undefined} company={app?.company ?? meta?.title ?? id} pdfReady={(app?.pdf ?? "").includes("✅")} />
           {/* Every action for this application sits in one row. Both of these
               are inline pills until clicked, and each expands to a full-width
@@ -156,20 +172,11 @@ export function ReportView({
           </div>
         )}
 
-        {(archetype || date || (url && url.startsWith("http"))) && (
+        {/* Metadata only — the posting link moved up into the action row. */}
+        {(archetype || date) && (
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
             {archetype && <span className="max-w-full truncate">{archetype}</span>}
             {date && <span className="tabular-nums text-faint">{date}</span>}
-            {url && url.startsWith("http") && (
-              <a
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center justify-center gap-1 text-brand hover:underline max-sm:min-h-[44px]"
-              >
-                posting <ExternalLink className="size-3" />
-              </a>
-            )}
           </div>
         )}
       </header>
