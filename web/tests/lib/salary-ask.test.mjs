@@ -40,7 +40,10 @@ const FULL = `salary_ask:
   floor: 210000
   confidence: "Medium"
   anchored_to: "Warsaw, Poland"
-  rationale: "Warsaw senior RN band, Levels.fyi + local job boards; matched at senior."`;
+  rationale: "Warsaw senior RN band, Levels.fyi + local job boards; matched at senior."
+  script_call: "Based on the Warsaw market for senior React Native roles and the scope here, I'm looking at 240,000 to 300,000 PLN gross. Happy to talk through the whole package."
+  script_text: "Based on the Warsaw market for senior React Native roles, I am targeting 240,000-300,000 PLN gross per year, open to discussing the full package."
+  script_text_single: "285,000 PLN gross per year, with flexibility depending on the overall package."`;
 
 test("parses a complete recommendation", () => {
   const a = parseSalaryAsk(report(FULL));
@@ -127,4 +130,35 @@ test("formatMoney survives a currency code Intl rejects", () => {
   assert.match(formatMoney(285000, "PLN"), /285,000/);
   assert.match(formatMoney(285000, "XYZ"), /285,000/);
   assert.match(formatMoney(285000, "TOOLONG"), /285,000\s*TOOLONG/);
+});
+
+test("the three registers are parsed separately", () => {
+  const a = parseSalaryAsk(report(FULL));
+  assert.match(a.scriptText, /240,000-300,000 PLN/);
+  assert.match(a.scriptTextSingle, /^285,000 PLN/, "the single-figure variant leads with the number");
+  assert.match(a.scriptCall, /Happy to talk/);
+});
+
+test("a written script stays inside a typical form field cap", () => {
+  // Salary fields are frequently capped; a truncated answer reads worse than a
+  // short one, so the mode asks for ~200 chars and this guards the shape.
+  const a = parseSalaryAsk(report(FULL));
+  assert.ok(a.scriptText.length <= 200, `scriptText was ${a.scriptText.length} chars`);
+});
+
+test("no scripts written yet leaves the numbers usable", () => {
+  const a = parseSalaryAsk(report(`salary_ask:
+  currency: "EUR"
+  range_low: 70000
+  range_high: 90000
+  single_number: 85000`));
+  assert.equal(a.scriptText, null);
+  assert.equal(a.scriptCall, null);
+  assert.equal(a.singleNumber, 85000, "missing prose must not invalidate the figures");
+});
+
+test("a script never leaks the candidate's own market", () => {
+  const a = parseSalaryAsk(report(FULL));
+  const prose = [a.scriptCall, a.scriptText, a.scriptTextSingle].join(" ");
+  assert.ok(!/karachi|pakistan|\bPKR\b|current salary/i.test(prose));
 });

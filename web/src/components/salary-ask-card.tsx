@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, Wallet } from "lucide-react";
+import { Check, Copy, MessageSquare, Wallet } from "lucide-react";
 import { formatMoney } from "@/lib/salary-ask.mjs";
 
 // "What are your salary expectations?" — asked on nearly every screening call
@@ -25,6 +25,9 @@ export type SalaryAsk = {
   confidence: "High" | "Medium" | "Low";
   anchoredTo: string | null;
   rationale: string | null;
+  scriptCall: string | null;
+  scriptText: string | null;
+  scriptTextSingle: string | null;
 };
 
 const CONFIDENCE_TONE: Record<string, string> = {
@@ -54,6 +57,23 @@ function CopyButton({ value, label }: { value: string; label: string }) {
       {done ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
       {done ? "Copied" : "Copy"}
     </button>
+  );
+}
+
+/** A sentence the candidate can use verbatim, with the register it is for.
+ *  Shown as text rather than hidden behind a copy button, because people want
+ *  to read what they are about to send before they send it. */
+function Script({ label, text }: { label: string; text: string }) {
+  return (
+    <div className="rounded-md border border-border bg-background p-3">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">{label}</span>
+        <span className="ml-auto">
+          <CopyButton value={text} label={label.toLowerCase()} />
+        </span>
+      </div>
+      <p className="mt-2 text-sm leading-relaxed text-foreground">{text}</p>
+    </div>
   );
 }
 
@@ -105,6 +125,23 @@ export function SalaryAskCard({ ask }: { ask: SalaryAsk }) {
           </div>
         </div>
       </div>
+
+      {(ask.scriptText || ask.scriptTextSingle || ask.scriptCall) && (
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center gap-2 pt-1">
+            <MessageSquare className="size-3.5 text-faint" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">
+              Ready to say or paste
+            </span>
+          </div>
+          {/* Text field first: it is the most common shape the question takes
+              and the one people most often answer badly, because they type a
+              bare number into a box that expects a sentence. */}
+          {ask.scriptText && <Script label="In a text box on a form" text={ask.scriptText} />}
+          {ask.scriptTextSingle && <Script label="If that box wants one figure" text={ask.scriptTextSingle} />}
+          {ask.scriptCall && <Script label="Out loud, on a call" text={ask.scriptCall} />}
+        </div>
+      )}
 
       <dl className="mt-4 space-y-1.5 text-xs text-muted">
         {ask.anchoredTo && (

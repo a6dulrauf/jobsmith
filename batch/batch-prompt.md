@@ -320,6 +320,9 @@ salary_ask: {the Block D2 recommendation — what the CANDIDATE should ask for. 
   confidence: "{High | Medium | Low}"
   anchored_to: "{the CITY/market the figure is anchored to — never the candidate's own location}"
   rationale: "{one sentence: which band, which sources, which seniority}"
+  script_call: "{spoken register — what to say when asked on a screening call}"
+  script_text: "{written register, under ~200 chars — paste into a free-text salary field}"
+  script_text_single: "{written, leads with the single figure, one flexibility clause}"
 risk_summary:
   legitimacy: "{high_confidence | proceed_with_caution | suspicious}"
   classification: "{clear | flagged | not_evaluated}"
@@ -399,6 +402,9 @@ salary_ask: {the Block D2 recommendation — what the CANDIDATE should ask for. 
   confidence: "{High | Medium | Low}"
   anchored_to: "{the CITY/market the figure is anchored to — never the candidate's own location}"
   rationale: "{one sentence: which band, which sources, which seniority}"
+  script_call: "{spoken register — what to say when asked on a screening call}"
+  script_text: "{written register, under ~200 chars — paste into a free-text salary field}"
+  script_text_single: "{written, leads with the single figure, one flexibility clause}"
 risk_summary:
   legitimacy: "{high_confidence | proceed_with_caution | suspicious}"
   classification: "{clear | flagged | not_evaluated}"

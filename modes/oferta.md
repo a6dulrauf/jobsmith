@@ -281,6 +281,28 @@ If the market data for this role and city is thin, say so, widen the range, and
 mark confidence Low. A wide honest range beats a precise invented one. Never
 produce a figure with no traceable basis; cite what the numbers came from.
 
+### The three ways this question gets asked
+
+The candidate meets this question in three different shapes, and an answer
+written for one reads badly in another. Produce all three, ready to use as-is.
+
+1. **Spoken, on a screening call.** Conversational. May be slightly longer, and
+   should invite a reply rather than close the topic.
+2. **Written, in a free-text form field.** This is the most common and the most
+   often botched. Tighter and more formal than speech — no "so", no "I'd say",
+   no hedging filler. Keep it **under about 200 characters**, because form fields
+   are frequently capped and a truncated salary answer is worse than a short one.
+3. **Written, where the field wants one figure but still accepts text.** Lead
+   with the number, then one short clause of flexibility.
+
+Every written variant must: state the currency, say gross or net and the period,
+tie the figure to market and scope in a few words so it reads as researched
+rather than plucked, and leave room to negotiate without inviting a lowball.
+Write them in the first person, as the candidate.
+
+Never write a sentence that mentions the candidate's current salary, their home
+country, or their cost of living. See the anchoring rule above.
+
 ### Required output format
 
 ```markdown
@@ -293,18 +315,24 @@ produce a figure with no traceable basis; cite what the numbers came from.
 | **Basis** | {which market, which sources, which seniority} |
 | **Confidence** | {High \| Medium \| Low} — {one clause on data quality} |
 
-**If asked on a call, say:**
-> "{One or two sentences the candidate can say verbatim — names the range,
-> ties it to market and scope, and stays open.}"
+**On a call, say:**
+> "{One or two sentences, spoken register, names the range, ties it to market
+> and scope, stays open.}"
 
-**If a form demands a single number:** {figure}
+**In a text box on a form, paste:**
+> "{One sentence, under ~200 characters, formal written register, names the
+> range.}"
+
+**If that box wants a single figure:**
+> "{One sentence leading with the number, plus a short flexibility clause.}"
 
 **Do not go below:** {walk-away figure} — {why}
 ```
 
-The verbatim script is not decoration. It is the deliverable: the candidate
-should be able to read it out or paste it into a form without doing any research
-of their own.
+These scripts are not decoration. They are the deliverable: the candidate should
+be able to read one out or paste it into a form without doing any research of
+their own. Write them so that is literally true — no placeholders, no square
+brackets left to fill in, no "[Company]".
 
 ## Block E — Customization Plan
 

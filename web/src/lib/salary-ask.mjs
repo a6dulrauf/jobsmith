@@ -43,6 +43,9 @@ const CONFIDENCE = new Set(["High", "Medium", "Low"]);
  * @property {"High"|"Medium"|"Low"} confidence
  * @property {string|null} anchoredTo  the market the figure is anchored to
  * @property {string|null} rationale
+ * @property {string|null} scriptCall        spoken, on a screening call
+ * @property {string|null} scriptText        written, for a free-text form field
+ * @property {string|null} scriptTextSingle  written, leading with one figure
  */
 
 /**
@@ -56,6 +59,7 @@ export function parseSalaryAsk(md) {
   if (!a || typeof a !== "object") return null;
 
   const num = (v) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const str = (v) => (typeof v === "string" && v.trim() ? v.trim() : null);
   const rangeLow = num(a.range_low);
   const rangeHigh = num(a.range_high);
   const singleNumber = num(a.single_number);
@@ -78,7 +82,13 @@ export function parseSalaryAsk(md) {
     floor: num(a.floor),
     confidence: /** @type {"High"|"Medium"|"Low"} */ (CONFIDENCE.has(a.confidence) ? a.confidence : "Low"),
     anchoredTo: typeof a.anchored_to === "string" && a.anchored_to.trim() ? a.anchored_to.trim() : null,
-    rationale: typeof a.rationale === "string" && a.rationale.trim() ? a.rationale.trim() : null,
+    rationale: str(a.rationale),
+    // The same question arrives spoken, as free text, and as a single-figure
+    // field. A sentence written for one register reads wrong in another, so the
+    // evaluation writes all three rather than the UI reshaping one.
+    scriptCall: str(a.script_call),
+    scriptText: str(a.script_text),
+    scriptTextSingle: str(a.script_text_single),
   };
 }
 
