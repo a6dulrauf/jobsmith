@@ -45,10 +45,14 @@ try {
     fail(`parseWorkableMarkdown row 0 = ${JSON.stringify(jobs[0])}`);
   }
 
-  if (jobs[0]?.url === 'https://apply.workable.com/optimile/jobs/view/ABC123') {
-    pass('parseWorkableMarkdown strips .md suffix from job URL');
+  // The feed links to /jobs/view/<id>.md. Stripping .md is not enough: that path
+  // still serves text/markdown, so a person clicking it in the portal gets raw
+  // markdown instead of a job posting. /j/<id> is the human-viewable page, and
+  // stored URLs are what the user clicks and what the liveness checker fetches.
+  if (jobs[0]?.url === 'https://apply.workable.com/optimile/j/ABC123') {
+    pass('parseWorkableMarkdown yields the human-viewable /j/<id> posting URL');
   } else {
-    fail(`parseWorkableMarkdown should strip .md; got url=${JSON.stringify(jobs[0]?.url)}`);
+    fail(`parseWorkableMarkdown should produce /j/<id>; got url=${JSON.stringify(jobs[0]?.url)}`);
   }
 
   // Robustness
@@ -117,7 +121,7 @@ try {
     '| Senior PM (full | part-time) | Product | Remote | Full-time | — | 2026-04-01 | [View](https://apply.workable.com/x/jobs/view/PIPE.md) |',
   ].join('\n');
   const strayJobs = parseWorkableMarkdown(strayPipeMd, 'X');
-  if (strayJobs.length === 1 && strayJobs[0].url === 'https://apply.workable.com/x/jobs/view/PIPE') {
+  if (strayJobs.length === 1 && strayJobs[0].url === 'https://apply.workable.com/x/j/PIPE') {
     pass('parseWorkableMarkdown extracts URL from line-level regex (survives stray pipes in title)');
   } else {
     fail(`stray-pipe row not handled correctly: ${JSON.stringify(strayJobs)}`);

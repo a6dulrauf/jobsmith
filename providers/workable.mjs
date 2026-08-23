@@ -86,6 +86,12 @@ export function parseWorkableMarkdown(text, companyName) {
     const urlMatch = line.match(/\[View\]\(([^)]+)\)/);
     let url = urlMatch ? urlMatch[1] : '';
     if (url.endsWith('.md')) url = url.slice(0, -3);
+    // The feed links to /jobs/view/<id>, which is Workable's MACHINE surface and
+    // serves text/markdown even without the .md suffix — opening it in a browser
+    // shows raw markdown, not a job page. /j/<id> is the human-viewable posting.
+    // Stored URLs are handed to the user to click and to the liveness checker,
+    // so they must be the page a person can actually read.
+    url = url.replace('/jobs/view/', '/j/');
     if (!url) continue;  // skip rows with no resolvable URL (e.g., malformed [View] link)
 
     // Validate the extracted URL — must parse as https://apply.workable.com/...
