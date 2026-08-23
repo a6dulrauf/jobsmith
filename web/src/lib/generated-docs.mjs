@@ -4,7 +4,7 @@
 // what existed by guessing instead of looking.
 //
 //   1. /api/cv-pdf matched any PDF in output/ whose name contained the company
-//      slug and served the newest. `cover-letter-abdul-rauf-hellofresh-….pdf`
+//      slug and served the newest. `cover-letter-jordan-reyes-acme-foods-….pdf`
 //      contains the slug, so "View tailored CV" opened the cover letter. The
 //      route knew the pdf mode writes `cv-…` — the comment says so — but never
 //      filtered on it.
@@ -52,7 +52,7 @@ export function companySlug(company) {
  * Find the newest generated document of each kind for one company.
  *
  * @param {string} root  career-ops root
- * @param {string} company  e.g. "HelloFresh"
+ * @param {string} company  e.g. "Acme Foods"
  * @returns {{cv: string|null, cover: string|null, email: string|null, contacto: string|null}}
  *   Each value is a path relative to root (e.g. "output/cv-…pdf") or null.
  */

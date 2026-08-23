@@ -13,7 +13,7 @@ import { computeSteps } from "../../src/lib/next-step.mjs";
 const READY = {
   hasCli: true, hasCv: true, hasProfile: true, hasPortals: true,
   inboxCount: 392, reportCount: 1, pdfCount: 1, appliedCount: 1, outcomeCount: 1,
-  topReport: { n: "1", company: "HelloFresh", score: "4.5/5" },
+  topReport: { n: "1", company: "Acme Foods", score: "4.5/5" },
 };
 const state = (o) => ({ ...READY, ...o });
 
@@ -54,7 +54,7 @@ test("an empty inbox asks for a scan before asking for a score", () => {
 test("a scored job with no PDF points at that exact report, by name", () => {
   const r = computeSteps(state({ pdfCount: 0, appliedCount: 0, outcomeCount: 0 }));
   assert.equal(r.next.id, "cv-pdf");
-  assert.match(r.next.title, /HelloFresh/);
+  assert.match(r.next.title, /Acme Foods/);
   assert.equal(r.next.href, "/pipeline/1");
 });
 

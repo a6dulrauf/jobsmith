@@ -9,7 +9,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseSalaryAsk, formatMoney } from "../../src/lib/salary-ask.mjs";
 
-const report = (askYaml) => `# Evaluation: HelloFresh — Senior React Native Engineer
+const report = (askYaml) => `# Evaluation: Acme Foods — Senior React Native Engineer
 
 **Date:** 2026-08-13
 **Score:** 4.5/5
@@ -19,7 +19,7 @@ const report = (askYaml) => `# Evaluation: HelloFresh — Senior React Native En
 ## Machine Summary
 
 \`\`\`yaml
-company: "HelloFresh"
+company: "Acme Foods"
 role: "Senior React Native Engineer"
 score: 4.5
 advertised_comp: "not stated"
@@ -31,7 +31,7 @@ Body text.
 `;
 
 const FULL = `salary_ask:
-  currency: "PLN"
+  currency: "EUR"
   period: "year"
   basis: "gross"
   range_low: 240000
@@ -39,31 +39,31 @@ const FULL = `salary_ask:
   single_number: 285000
   floor: 210000
   confidence: "Medium"
-  anchored_to: "Warsaw, Poland"
-  rationale: "Warsaw senior RN band, Levels.fyi + local job boards; matched at senior."
-  script_call: "Based on the Warsaw market for senior React Native roles and the scope here, I'm looking at 240,000 to 300,000 PLN gross. Happy to talk through the whole package."
-  script_text: "Based on the Warsaw market for senior React Native roles, I am targeting 240,000-300,000 PLN gross per year, open to discussing the full package."
-  script_text_single: "285,000 PLN gross per year, with flexibility depending on the overall package."`;
+  anchored_to: "Lisbon, Portugal"
+  rationale: "Lisbon senior RN band, Levels.fyi + local job boards; matched at senior."
+  script_call: "Based on the Lisbon market for senior React Native roles and the scope here, I'm looking at 240,000 to 300,000 EUR gross. Happy to talk through the whole package."
+  script_text: "Based on the Lisbon market for senior React Native roles, I am targeting 240,000-300,000 EUR gross per year, open to discussing the full package."
+  script_text_single: "285,000 EUR gross per year, with flexibility depending on the overall package."`;
 
 test("parses a complete recommendation", () => {
   const a = parseSalaryAsk(report(FULL));
-  assert.equal(a.currency, "PLN");
+  assert.equal(a.currency, "EUR");
   assert.equal(a.rangeLow, 240000);
   assert.equal(a.rangeHigh, 300000);
   assert.equal(a.singleNumber, 285000);
   assert.equal(a.floor, 210000);
   assert.equal(a.confidence, "Medium");
-  assert.equal(a.anchoredTo, "Warsaw, Poland");
+  assert.equal(a.anchoredTo, "Lisbon, Portugal");
   assert.equal(a.period, "year");
   assert.equal(a.basis, "gross");
 });
 
 test("the anchor is the ROLE's market, not the candidate's home", () => {
-  // The candidate is in Karachi; the role is in Warsaw and pays Warsaw money.
+  // The candidate is in Karachi; the role is in Lisbon and pays Lisbon money.
   // Anchoring on the candidate's own market is the single most costly mistake
   // this feature exists to prevent, so the field is surfaced, never derived.
   const a = parseSalaryAsk(report(FULL));
-  assert.equal(a.anchoredTo, "Warsaw, Poland");
+  assert.equal(a.anchoredTo, "Lisbon, Portugal");
   assert.ok(!/karachi|pakistan|pkr/i.test(JSON.stringify(a)));
 });
 
@@ -127,15 +127,15 @@ test("formatMoney survives a currency code Intl rejects", () => {
   // unfamiliar market currency still renders. It throws RangeError on a
   // MALFORMED code, which an evaluation could emit from a typo — and a report
   // page must not go blank over a salary label.
-  assert.match(formatMoney(285000, "PLN"), /285,000/);
+  assert.match(formatMoney(285000, "EUR"), /285,000/);
   assert.match(formatMoney(285000, "XYZ"), /285,000/);
   assert.match(formatMoney(285000, "TOOLONG"), /285,000\s*TOOLONG/);
 });
 
 test("the three registers are parsed separately", () => {
   const a = parseSalaryAsk(report(FULL));
-  assert.match(a.scriptText, /240,000-300,000 PLN/);
-  assert.match(a.scriptTextSingle, /^285,000 PLN/, "the single-figure variant leads with the number");
+  assert.match(a.scriptText, /240,000-300,000 EUR/);
+  assert.match(a.scriptTextSingle, /^285,000 EUR/, "the single-figure variant leads with the number");
   assert.match(a.scriptCall, /Happy to talk/);
 });
 

@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 //
 // The kind is decided by findGeneratedDocs() on the FILENAME PREFIX, not by the
 // company slug alone. Matching the slug on its own served
-// `cover-letter-…-hellofresh-….pdf` whenever the cover letter was the newer
+// `cover-letter-…-acme-foods-….pdf` whenever the cover letter was the newer
 // file, so "View tailored CV" opened the cover letter.
 export async function GET(req: NextRequest) {
   const company = (req.nextUrl.searchParams.get("company") ?? "").trim();

@@ -27,11 +27,11 @@ function makeRoot(files = {}) {
 
 test("the reported bug: a NEWER cover letter must not be served as the CV", () => {
   const root = makeRoot({
-    "cv-abdul-rauf-hellofresh-2026-08-23.pdf": 100, // older
-    "cover-letter-abdul-rauf-hellofresh-2026-08-23.pdf": 10, // newer
+    "cv-jordan-reyes-acme-foods-2026-08-23.pdf": 100, // older
+    "cover-letter-jordan-reyes-acme-foods-2026-08-23.pdf": 10, // newer
   });
   try {
-    const d = findGeneratedDocs(root, "HelloFresh");
+    const d = findGeneratedDocs(root, "Acme Foods");
     assert.match(d.cv, /^output\/cv-/, "the CV slot must hold a cv- file");
     assert.match(d.cover, /^output\/cover-letter-/);
     assert.notEqual(d.cv, d.cover);
@@ -42,13 +42,13 @@ test("the reported bug: a NEWER cover letter must not be served as the CV", () =
 
 test("finds all four kinds, including the markdown drafts", () => {
   const root = makeRoot({
-    "cv-abdul-rauf-hellofresh-2026-08-23.pdf": 4,
-    "cover-letter-abdul-rauf-hellofresh-2026-08-23.pdf": 3,
-    "email-hellofresh-2026-08-23.md": 2,
-    "contacto-hellofresh-2026-08-23.md": 1,
+    "cv-jordan-reyes-acme-foods-2026-08-23.pdf": 4,
+    "cover-letter-jordan-reyes-acme-foods-2026-08-23.pdf": 3,
+    "email-acme-foods-2026-08-23.md": 2,
+    "contacto-acme-foods-2026-08-23.md": 1,
   });
   try {
-    const d = findGeneratedDocs(root, "HelloFresh");
+    const d = findGeneratedDocs(root, "Acme Foods");
     assert.ok(d.cv && d.cover && d.email && d.contacto, `all four should be found: ${JSON.stringify(d)}`);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -57,18 +57,18 @@ test("finds all four kinds, including the markdown drafts", () => {
 
 test("picks the newest when a kind was regenerated", () => {
   const root = makeRoot({
-    "cv-abdul-rauf-hellofresh-2026-08-20.pdf": 500,
-    "cv-abdul-rauf-hellofresh-2026-08-23.pdf": 5,
+    "cv-jordan-reyes-acme-foods-2026-08-20.pdf": 500,
+    "cv-jordan-reyes-acme-foods-2026-08-23.pdf": 5,
   });
   try {
-    assert.equal(findGeneratedDocs(root, "HelloFresh").cv, "output/cv-abdul-rauf-hellofresh-2026-08-23.pdf");
+    assert.equal(findGeneratedDocs(root, "Acme Foods").cv, "output/cv-jordan-reyes-acme-foods-2026-08-23.pdf");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
 test("a company slug never matches a longer company name", () => {
-  const root = makeRoot({ "cv-abdul-rauf-metabase-2026-08-23.pdf": 5 });
+  const root = makeRoot({ "cv-jordan-reyes-metabase-2026-08-23.pdf": 5 });
   try {
     assert.equal(findGeneratedDocs(root, "Meta").cv, null, "Meta must not be served Metabase's CV");
     assert.ok(findGeneratedDocs(root, "Metabase").cv);
@@ -78,9 +78,9 @@ test("a company slug never matches a longer company name", () => {
 });
 
 test("multi-word companies resolve to their hyphenated slug", () => {
-  const root = makeRoot({ "cv-abdul-rauf-hugging-face-2026-08-23.pdf": 5 });
+  const root = makeRoot({ "cv-jordan-reyes-northwind-labs-2026-08-23.pdf": 5 });
   try {
-    assert.ok(findGeneratedDocs(root, "Hugging Face").cv);
+    assert.ok(findGeneratedDocs(root, "Northwind Labs").cv);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -89,16 +89,16 @@ test("multi-word companies resolve to their hyphenated slug", () => {
 test("nothing generated yet yields nulls, not a throw", () => {
   const root = mkdtempSync(join(tmpdir(), "co-gendocs-empty-"));
   try {
-    assert.deepEqual(findGeneratedDocs(root, "HelloFresh"), { cv: null, cover: null, email: null, contacto: null });
+    assert.deepEqual(findGeneratedDocs(root, "Acme Foods"), { cv: null, cover: null, email: null, contacto: null });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
 test("an unrecognised prefix is ignored rather than mis-filed", () => {
-  const root = makeRoot({ "notes-hellofresh-2026-08-23.md": 5 });
+  const root = makeRoot({ "notes-acme-foods-2026-08-23.md": 5 });
   try {
-    const d = findGeneratedDocs(root, "HelloFresh");
+    const d = findGeneratedDocs(root, "Acme Foods");
     assert.deepEqual(d, { cv: null, cover: null, email: null, contacto: null });
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -106,8 +106,8 @@ test("an unrecognised prefix is ignored rather than mis-filed", () => {
 });
 
 test("companySlug matches the generators' naming", () => {
-  assert.equal(companySlug("HelloFresh"), "hellofresh");
-  assert.equal(companySlug("Hugging Face"), "hugging-face");
-  assert.equal(companySlug("CSAA Insurance Group"), "csaa-insurance-group");
+  assert.equal(companySlug("Acme Foods"), "acme-foods");
+  assert.equal(companySlug("Northwind Labs"), "northwind-labs");
+  assert.equal(companySlug("Globex Insurance Group"), "globex-insurance-group");
   assert.equal(companySlug(""), "");
 });
